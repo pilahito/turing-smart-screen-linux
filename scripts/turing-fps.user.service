@@ -1,0 +1,16 @@
+[Unit]
+Description=Turing Smart Screen FPS bridge
+Documentation=https://github.com/mathoudebine/turing-smart-screen-python
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/turing-smart-screen-python/scripts/poll-fps.sh
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=graphical-session.target

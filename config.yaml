@@ -5,12 +5,12 @@ config:
   # Use AUTO for COM port auto-discovery (may not work on every setup) or if device is not detected as a COM port
   # COM_PORT: "/dev/ttyACM0"
   # COM_PORT: "COM3"
-  COM_PORT: "AUTO"
+  COM_PORT: "/dev/ttyACM0"
 
   # Theme to use (located in res/themes)
   # Use the name of the folder as value
   # Choose a theme made for your screen size (see DISPLAY_SIZE inside theme.yaml)
-  THEME: 3.5inchTheme2
+  THEME: Cyberdeck
 
   # Hardware sensors reading
   # Choose the appropriate method for reading your hardware sensors:
@@ -24,7 +24,7 @@ config:
   # Linux/MacOS interfaces are named "eth0", "wlan0", "wlp1s0", "enp2s0"...
   # For Windows use the interfaces pretty name: "Ethernet 2", "Wi-Fi", ...
   # Leave the fields empty if the card does not exist on your setup
-  ETH: "" # Ethernet Card
+  ETH: "enp5s0" # Ethernet Card
   WLO: "" # Wi-Fi Card
 
   # CPU fan
@@ -33,6 +33,14 @@ config:
   # If auto-detection fails, it might be necessary to manually indicate which fan is the CPU fan
   # Value must be 'controller/fan' e.g. 'nct6798/fan2'. Use configuration wizard for help in selection
   CPU_FAN: AUTO
+
+  # FPS en Linux: no hay FPS global del sistema. Escribe el valor en un archivo (p. ej. desde MangoHud)
+  # o deja vacío para mostrar "N/A" en el tema. Ejemplo: /tmp/turing-fps
+  FPS_FILE: "/tmp/turing-fps"
+
+  # Ventiladores CPU: en Gigabyte B760 ejecuta una vez (requiere sudo):
+  #   ./scripts/enable-fan-sensors.sh
+  # Luego reinicia el monitor. Si AUTO falla, elige el ventilador en: python3 configure.py
 
   # Address used for ping sensor. Can be internal/external IP (e.g. 8.8.8.8 or 192.168.0.1) or hostname (google.com)
   PING: 8.8.8.8
@@ -77,4 +85,4 @@ display:
   # By default, this program resets the display on startup, in case it is in a degraded state from previous runs.
   # This behavior causes the display to disconnect/reconnect, and the COM port to change.
   # On some displays (like rev. A) it can be an issue, in this case change the value to "false".
-  RESET_ON_STARTUP: true
+  RESET_ON_STARTUP: false

@@ -1,13 +1,8 @@
 author: "@hicwic"
 
 display:
-  # Specify the display size in inch for this theme: 3.5" (default) or 5"
   DISPLAY_SIZE: 3.5"
-
-  # Specify the display orientation for this theme: portrait or landscape (reverse orientation is managed in config.yaml)
   DISPLAY_ORIENTATION: landscape
-
-  # Backplate RGB LED color (for HW revision 'flagship' devices only), set one that match your theme dominant color
   DISPLAY_RGB_LED: 255, 0, 0
 
 static_images:
@@ -18,11 +13,10 @@ static_images:
     WIDTH: 480
     HEIGHT: 320
 
-
 STATS:
   CPU:
     PERCENTAGE:
-      INTERVAL: 1
+      INTERVAL: 3
       RADIAL:
         SHOW: True
         X: 80
@@ -42,10 +36,9 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 20
         FONT_COLOR: 248, 177, 51
-        #BACKGROUND_COLOR: 200, 200, 200
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
-      INTERVAL: 5
+      INTERVAL: 8
       TEXT:
         SHOW: True
         SHOW_UNIT: True
@@ -54,10 +47,9 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 23
         FONT_COLOR: 248, 177, 51
-        # BACKGROUND_COLOR: 132, 154, 165
         BACKGROUND_IMAGE: background.png
     FAN_SPEED:
-      INTERVAL: 5
+      INTERVAL: 10
       RADIAL:
         SHOW: True
         X: 170
@@ -77,10 +69,9 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 15
         FONT_COLOR: 248, 177, 51
-        #BACKGROUND_COLOR: 200, 200, 200
         BACKGROUND_IMAGE: background.png
   MEMORY:
-    INTERVAL: 5
+    INTERVAL: 6
     VIRTUAL:
       RADIAL:
         SHOW: True
@@ -101,10 +92,9 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 13
         FONT_COLOR: 248, 177, 51
-        # BACKGROUND_COLOR: 0, 0, 0
         BACKGROUND_IMAGE: background.png
   GPU:
-    INTERVAL: 1
+    INTERVAL: 4
     PERCENTAGE:
       RADIAL:
         SHOW: True
@@ -125,7 +115,6 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 20
         FONT_COLOR: 21, 176, 231
-        # BACKGROUND_COLOR: 0, 0, 0
         BACKGROUND_IMAGE: background.png
     MEMORY_PERCENT:
       GRAPH:
@@ -138,7 +127,6 @@ STATS:
         MAX_VALUE: 100
         BAR_COLOR: 255, 0, 0
         BAR_OUTLINE: False
-        # BACKGROUND_COLOR: 0, 0, 0
         BACKGROUND_IMAGE: background.png
       TEXT:
         SHOW: True
@@ -148,7 +136,6 @@ STATS:
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 20
         FONT_COLOR: 21, 176, 231
-        #BACKGROUND_COLOR: 132, 154, 165
         BACKGROUND_IMAGE: background.png
     TEMPERATURE:
       TEXT:
@@ -159,7 +146,6 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 23
         FONT_COLOR: 248, 177, 51
-        #BACKGROUND_COLOR: 100, 100, 100
         BACKGROUND_IMAGE: background.png
     FAN_SPEED:
       RADIAL:
@@ -181,7 +167,6 @@ STATS:
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 15
         FONT_COLOR: 248, 177, 51
-        #BACKGROUND_COLOR: 200, 200, 200
         BACKGROUND_IMAGE: background.png
     FPS:
       TEXT:
@@ -189,27 +174,24 @@ STATS:
         SHOW_UNIT: False
         X: 46
         Y: 279
-        MIN_SIZE: 4
+        WIDTH: 130
+        HEIGHT: 32
+        MIN_SIZE: 3
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 27
         FONT_COLOR: 255, 255, 255
-        #BACKGROUND_COLOR: 100, 100, 100
         BACKGROUND_IMAGE: background.png
+    FREQUENCY:
+      TEXT:
+        SHOW: False
+      GRAPH:
+        SHOW: False
+      RADIAL:
+        SHOW: False
       LINE_GRAPH:
-        SHOW: True
-        X: 180
-        Y: 220
-        WIDTH: 133
-        HEIGHT: 82
-        MIN_VALUE: 0
-        MAX_VALUE: 144
-        HISTORY_SIZE: 100
-        AUTOSCALE: True
-        LINE_COLOR: 255, 255, 255
-        AXIS: True
-        BACKGROUND_IMAGE: background.png
+        SHOW: False
   NET:
-    INTERVAL: 1
+    INTERVAL: 5
     ETH:
       UPLOAD:
         TEXT:
@@ -219,7 +201,6 @@ STATS:
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 10
           FONT_COLOR: 255, 255, 255
-          # BACKGROUND_COLOR: 132, 154, 165
           BACKGROUND_IMAGE: background.png
       DOWNLOAD:
         TEXT:
@@ -229,5 +210,4 @@ STATS:
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 10
           FONT_COLOR: 255, 255, 255
-          # BACKGROUND_COLOR: 132, 154, 165
           BACKGROUND_IMAGE: background.png

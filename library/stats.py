@@ -41,6 +41,9 @@ from library.display import display
 from library.log import logger
 
 DEFAULT_HISTORY_SIZE = 10
+_CPU_FAN_WARNED = False
+_GPU_FAN_WARNED = False
+_GPU_FPS_WARNED = False
 
 ETH_CARD = config.CONFIG_DATA["config"].get("ETH", "")
 WLO_CARD = config.CONFIG_DATA["config"].get("WLO", "")
@@ -90,19 +93,22 @@ def get_theme_file_path(name):
         return None
 
 
-def display_themed_value(theme_data, value, min_size=0, unit=''):
+def display_themed_value(theme_data, value, min_size=0, unit='', custom_text=None):
     if not theme_data.get("SHOW", False):
         return
 
-    if value is None:
+    if value is None and custom_text is None:
         return
 
     # overridable MIN_SIZE from theme with backward compatibility
     min_size = theme_data.get("MIN_SIZE", min_size)
 
-    text = f"{{:>{min_size}}}".format(value)
-    if theme_data.get("SHOW_UNIT", True) and unit:
-        text += str(unit)
+    if custom_text is not None:
+        text = custom_text
+    else:
+        text = f"{{:>{min_size}}}".format(value)
+        if theme_data.get("SHOW_UNIT", True) and unit:
+            text += str(unit)
 
     display.lcd.DisplayText(
         text=text,
@@ -341,6 +347,7 @@ class CPU:
 
     @classmethod
     def fan_speed(cls):
+        global _CPU_FAN_WARNED
         if CPU_FAN != "AUTO":
             fan_percent = sensors.Cpu.fan_percent(CPU_FAN)
         else:
@@ -356,17 +363,24 @@ class CPU:
         cpu_fan_line_graph_data = config.THEME_DATA['STATS']['CPU']['FAN_SPEED']['LINE_GRAPH']
 
         if math.isnan(fan_percent):
-            fan_percent = 0
-            if cpu_fan_text_data['SHOW'] or cpu_fan_radial_data['SHOW'] or cpu_fan_graph_data[
-                'SHOW'] or cpu_fan_line_graph_data['SHOW']:
+            if not _CPU_FAN_WARNED:
+                _CPU_FAN_WARNED = True
                 if sys.platform == "win32":
                     logger.warning("Your CPU Fan sensor could not be auto-detected")
                 else:
-                    logger.warning("Your CPU Fan sensor could not be auto-detected. Select it from Configuration UI.")
-                cpu_fan_text_data['SHOW'] = False
-                cpu_fan_radial_data['SHOW'] = False
-                cpu_fan_graph_data['SHOW'] = False
-                cpu_fan_line_graph_data['SHOW'] = False
+                    logger.warning(
+                        "Ventilador CPU no detectado. Ejecuta: ./scripts/enable-fan-sensors.sh "
+                        "(sudo) y reinicia el monitor"
+                    )
+            if cpu_fan_radial_data.get('SHOW', False):
+                display_themed_radial_bar(
+                    theme_data=cpu_fan_radial_data,
+                    value=0,
+                    min_size=3,
+                    unit='',
+                    custom_text='N/A'
+                )
+            return
 
         display_themed_percent_value(cpu_fan_text_data, fan_percent)
         display_themed_progress_bar(cpu_fan_graph_data, fan_percent)
@@ -384,6 +398,7 @@ class Gpu:
 
     @classmethod
     def stats(cls):
+        sensors.Gpu.is_available()
         load, memory_percentage, memory_used_mb, total_memory_mb, temperature = sensors.Gpu.stats()
         fps = sensors.Gpu.fps()
         fan_percent = sensors.Gpu.fan_percent()
@@ -529,30 +544,45 @@ class Gpu:
         gpu_fps_graph_data = theme_gpu_data['FPS']['GRAPH']
         gpu_fps_line_graph_data = theme_gpu_data['FPS']['LINE_GRAPH']
 
-        if fps < 0:
-            fps = 0
-            if gpu_fps_text_data['SHOW'] or gpu_fps_radial_data['SHOW'] or gpu_fps_graph_data[
-                'SHOW'] or gpu_fps_line_graph_data['SHOW']:
-                logger.warning("Your GPU FPS is not supported yet")
-                gpu_fps_text_data['SHOW'] = False
-                gpu_fps_radial_data['SHOW'] = False
-                gpu_fps_graph_data['SHOW'] = False
-                gpu_fps_line_graph_data['SHOW'] = False
+        fps_available = fps >= 0
+        if not fps_available:
+            global _GPU_FPS_WARNED
+            if not _GPU_FPS_WARNED and (
+                gpu_fps_text_data.get('SHOW', False)
+                or gpu_fps_radial_data.get('SHOW', False)
+                or gpu_fps_graph_data.get('SHOW', False)
+                or gpu_fps_line_graph_data.get('SHOW', False)
+            ):
+                _GPU_FPS_WARNED = True
+                if sys.platform == "linux":
+                    logger.warning(
+                        "FPS no disponible en Linux sin archivo externo. "
+                        "Configura FPS_FILE en config.yaml o escribe el valor en /tmp/turing-fps"
+                    )
+                else:
+                    logger.warning("Your GPU FPS is not supported yet")
 
-        display_themed_progress_bar(gpu_fps_graph_data, fps)
-        display_themed_value(
-            theme_data=gpu_fps_text_data,
-            value=int(fps),
-            min_size=4,
-            unit=" FPS"
-        )
-        display_themed_radial_bar(
-            theme_data=gpu_fps_radial_data,
-            value=int(fps),
-            min_size=4,
-            unit=" FPS"
-        )
-        display_themed_line_graph(gpu_fps_line_graph_data, cls.last_values_gpu_fps)
+        if fps_available:
+            display_themed_progress_bar(gpu_fps_graph_data, fps)
+            display_themed_value(
+                theme_data=gpu_fps_text_data,
+                value=int(fps),
+                min_size=3,
+                unit=""
+            )
+            display_themed_radial_bar(
+                theme_data=gpu_fps_radial_data,
+                value=int(fps),
+                min_size=4,
+                unit=" FPS"
+            )
+            display_themed_line_graph(gpu_fps_line_graph_data, cls.last_values_gpu_fps)
+        elif gpu_fps_text_data.get('SHOW', False):
+            display_themed_value(
+                theme_data=gpu_fps_text_data,
+                value=None,
+                custom_text='N/A'
+            )
 
         # GPU Fan Speed (%)
         gpu_fan_text_data = theme_gpu_data['FAN_SPEED']['TEXT']
@@ -561,39 +591,51 @@ class Gpu:
         gpu_fan_line_graph_data = theme_gpu_data['FAN_SPEED']['LINE_GRAPH']
 
         if math.isnan(fan_percent):
-            fan_percent = 0
-            if gpu_fan_text_data['SHOW'] or gpu_fan_radial_data['SHOW'] or gpu_fan_graph_data[
-                'SHOW'] or gpu_fan_line_graph_data['SHOW']:
-                logger.warning("Your GPU Fan Speed is not supported yet")
-                gpu_fan_text_data['SHOW'] = False
-                gpu_fan_radial_data['SHOW'] = False
-                gpu_fan_graph_data['SHOW'] = False
-                gpu_fan_line_graph_data['SHOW'] = False
+            global _GPU_FAN_WARNED
+            if not _GPU_FAN_WARNED:
+                _GPU_FAN_WARNED = True
+                logger.warning(
+                    "Ventilador GPU no detectado (nvidia-smi devolvió N/A). "
+                    "RTX 3060 en reposo suele mostrar 0% cuando el ventilador está parado."
+                )
+            if gpu_fan_radial_data.get('SHOW', False):
+                display_themed_radial_bar(
+                    theme_data=gpu_fan_radial_data,
+                    value=0,
+                    min_size=3,
+                    unit='',
+                    custom_text='N/A'
+                )
+        else:
+            display_themed_percent_value(gpu_fan_text_data, fan_percent)
+            display_themed_progress_bar(gpu_fan_graph_data, fan_percent)
+            display_themed_percent_radial_bar(gpu_fan_radial_data, fan_percent)
+            display_themed_line_graph(gpu_fan_line_graph_data, cls.last_values_gpu_fan_speed)
 
-        display_themed_percent_value(gpu_fan_text_data, fan_percent)
-        display_themed_progress_bar(gpu_fan_graph_data, fan_percent)
-        display_themed_percent_radial_bar(gpu_fan_radial_data, fan_percent)
-        display_themed_line_graph(gpu_fan_line_graph_data, cls.last_values_gpu_fan_speed)
-
-        # GPU Frequency (Ghz)
+        # GPU Frequency (GHz) — desactivado en Cyberdeck (misma zona que FPS en el fondo)
         gpu_freq_text_data = theme_gpu_data['FREQUENCY']['TEXT']
         gpu_freq_radial_data = theme_gpu_data['FREQUENCY']['RADIAL']
         gpu_freq_graph_data = theme_gpu_data['FREQUENCY']['GRAPH']
         gpu_freq_line_graph_data = theme_gpu_data['FREQUENCY']['LINE_GRAPH']
-        display_themed_value(
-            theme_data=gpu_freq_text_data,
-            value=f'{freq_ghz:.2f}',
-            unit=" GHz",
-            min_size=4
+        gpu_freq_enabled = any(
+            theme_gpu_data['FREQUENCY'].get(section, {}).get('SHOW', False)
+            for section in ('TEXT', 'GRAPH', 'RADIAL', 'LINE_GRAPH')
         )
-        display_themed_progress_bar(gpu_freq_graph_data, freq_ghz)
-        display_themed_radial_bar(
-            theme_data=gpu_freq_radial_data,
-            value=f'{freq_ghz:.2f}',
-            unit=" GHz",
-            min_size=4
-        )
-        display_themed_line_graph(gpu_freq_line_graph_data, cls.last_values_gpu_frequency)
+        if gpu_freq_enabled:
+            display_themed_value(
+                theme_data=gpu_freq_text_data,
+                value=f'{freq_ghz:.2f}',
+                unit=" GHz",
+                min_size=4
+            )
+            display_themed_progress_bar(gpu_freq_graph_data, freq_ghz)
+            display_themed_radial_bar(
+                theme_data=gpu_freq_radial_data,
+                value=f'{freq_ghz:.2f}',
+                unit=" GHz",
+                min_size=4
+            )
+            display_themed_line_graph(gpu_freq_line_graph_data, cls.last_values_gpu_frequency)
 
     @staticmethod
     def is_available():

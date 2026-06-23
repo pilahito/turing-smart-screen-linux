@@ -1,0 +1,21 @@
+[Unit]
+Description=Turing Smart Screen (mini pantalla USB)
+Documentation=https://github.com/mathoudebine/turing-smart-screen-python
+After=graphical-session.target
+PartOf=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/turing-smart-screen-python
+ExecStart=%h/turing-smart-screen-python/scripts/start-at-boot.sh
+Restart=on-failure
+RestartSec=20
+StartLimitIntervalSec=300
+StartLimitBurst=5
+# Bandeja del sistema: sesión gráfica
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=graphical-session.target

@@ -21,11 +21,17 @@
 # This file will use Python libraries (psutil, GPUtil, etc.) to get hardware sensors
 # For all platforms (Linux, Windows, macOS) but not all HW is supported
 
+import json
 import math
+import os
 import platform
+import re
+import shutil
+import subprocess
 import sys
 from collections import namedtuple
 from enum import IntEnum, auto
+from pathlib import Path
 from typing import Tuple
 
 # Nvidia GPU
@@ -58,6 +64,90 @@ class GpuType(IntEnum):
 
 
 DETECTED_GPU = GpuType.UNSUPPORTED
+
+MOTHERBOARD_FAN_CHIPS = ("it86", "it87", "it88", "it89", "nct6683", "nct677", "nct679")
+SFAN = namedtuple('sfan', ['label', 'current', 'percent'])
+
+
+def _pwm_percent(pwm_path: str) -> int:
+    from psutil._common import bcat
+    try:
+        pwm_val = int(bcat(pwm_path))
+        return min(100, max(0, int(pwm_val / 255 * 100)))
+    except (IOError, OSError, ValueError):
+        return 0
+
+
+def _sensors_json_fans() -> dict:
+    if shutil.which("sensors") is None:
+        return {}
+    try:
+        result = subprocess.run(
+            ["sensors", "-j"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return {}
+        data = json.loads(result.stdout)
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return {}
+
+    ret = {}
+    fan_re = re.compile(r"^fan(\d+)$")
+    pwm_re = re.compile(r"^pwm(\d+)$")
+    for chip_name, chip_data in data.items():
+        if not isinstance(chip_data, dict):
+            continue
+        entries = []
+        fan_items = {}
+        pwm_items = {}
+        for key, value in chip_data.items():
+            if not isinstance(value, dict):
+                continue
+            fan_match = fan_re.match(key)
+            pwm_match = pwm_re.match(key)
+            if fan_match:
+                fan_items[int(fan_match.group(1))] = value
+            elif pwm_match:
+                pwm_items[int(pwm_match.group(1))] = value
+
+        for fan_idx in sorted(fan_items):
+            fan_data = fan_items[fan_idx]
+            rpm = fan_data.get("fan", {}).get("input")
+            if rpm is None:
+                continue
+            try:
+                current_rpm = int(rpm)
+            except (TypeError, ValueError):
+                continue
+            max_rpm = 2200 if current_rpm > 1500 else 1500
+            percent = min(100, max(0, int(current_rpm / max_rpm * 100)))
+            if fan_idx in pwm_items:
+                pwm_input = pwm_items[fan_idx].get("pwm", {}).get("input")
+                if pwm_input is not None:
+                    try:
+                        percent = min(100, max(percent, int(float(pwm_input) / 255 * 100)))
+                    except (TypeError, ValueError):
+                        pass
+            entries.append(SFAN(f"fan{fan_idx}", current_rpm, percent))
+
+        if not entries and pwm_items:
+            for pwm_idx in sorted(pwm_items):
+                pwm_input = pwm_items[pwm_idx].get("pwm", {}).get("input")
+                if pwm_input is None:
+                    continue
+                try:
+                    percent = min(100, max(0, int(float(pwm_input) / 255 * 100)))
+                except (TypeError, ValueError):
+                    continue
+                entries.append(SFAN(f"pwm{pwm_idx}", 0, percent))
+
+        if entries:
+            ret[chip_name] = entries
+    return ret
 
 
 # Function inspired of psutil/psutil/_pslinux.py:sensors_fans()
@@ -109,14 +199,96 @@ def sensors_fans():
         unit_name = cat(os.path.join(os.path.dirname(base), 'name')).strip()
         label = cat(base + '_label', fallback=os.path.basename(base)).strip()
 
-        custom_sfan = namedtuple('sfan', ['label', 'current', 'percent'])
-        ret[unit_name].append(custom_sfan(label, current_rpm, percent))
+        ret[unit_name].append(SFAN(label, current_rpm, percent))
+
+    if not ret:
+        for pwm_path in sorted(glob.glob('/sys/class/hwmon/hwmon*/pwm[0-9]')):
+            try:
+                unit_name = cat(os.path.join(os.path.dirname(pwm_path), 'name')).strip()
+                fan_idx = os.path.basename(pwm_path).replace('pwm', '')
+                percent = _pwm_percent(pwm_path)
+                ret[unit_name].append(SFAN(f"pwm{fan_idx}", 0, percent))
+            except (IOError, OSError):
+                continue
+
+    if not ret:
+        ret = _sensors_json_fans()
 
     return dict(ret)
 
 
 def is_cpu_fan(label: str) -> bool:
-    return ("cpu" in label.lower()) or ("proc" in label.lower())
+    label_lower = label.lower().replace('_', ' ')
+    if any(m in label_lower for m in ('cpu', 'proc', 'processor', 'pump', 'aio', 'sys', 'chassis')):
+        return True
+    return label_lower in ('fan1', 'fan 1', 'pwm1', 'fan2', 'pwm2', 'fan 2')
+
+
+def _read_external_fps() -> int:
+    """Lee FPS real desde archivo opcional (MangoHud, script propio, etc.)."""
+    candidates = []
+    try:
+        from library import config
+        fps_file = config.CONFIG_DATA.get('config', {}).get('FPS_FILE', '')
+        if fps_file:
+            candidates.append(os.path.expanduser(fps_file))
+    except Exception:
+        pass
+    candidates.extend([
+        '/tmp/turing-fps',
+        os.path.expanduser('~/.cache/turing-fps'),
+        os.path.expanduser('~/.local/share/turing-fps'),
+    ])
+    for path in candidates:
+        try:
+            if not path or not os.path.isfile(path):
+                continue
+            raw = Path(path).read_text(encoding='utf-8', errors='ignore').strip().split()[0]
+            fps_val = int(float(raw.replace(',', '.')))
+            if 0 <= fps_val <= 9999:
+                return fps_val
+        except (OSError, ValueError, IndexError):
+            continue
+    return -1
+
+
+def _motherboard_fan_percent(fans: dict) -> float:
+    best = math.nan
+    for chip_name, entries in fans.items():
+        chip_lower = chip_name.lower()
+        if not any(token in chip_lower for token in MOTHERBOARD_FAN_CHIPS):
+            continue
+        for entry in entries:
+            pct = float(entry.percent)
+            if math.isnan(pct):
+                continue
+            if pct > 0:
+                return pct
+            if math.isnan(best):
+                best = pct
+    return best
+
+
+def _resolve_cpu_fan_entry(fan_name: str = None) -> SFAN | None:
+    fans = sensors_fans()
+    if not fans:
+        return None
+    for name, entries in fans.items():
+        for entry in entries:
+            if fan_name is not None and fan_name == "%s/%s" % (name, entry.label):
+                return entry
+            if fan_name is None and (is_cpu_fan(entry.label) or is_cpu_fan(name)):
+                return entry
+    for chip_name, entries in fans.items():
+        chip_lower = chip_name.lower()
+        if not any(token in chip_lower for token in MOTHERBOARD_FAN_CHIPS):
+            continue
+        for entry in entries:
+            if entry.percent > 0 or entry.current > 0:
+                return entry
+        if entries:
+            return entries[0]
+    return None
 
 
 class Cpu(sensors.Cpu):
@@ -166,19 +338,25 @@ class Cpu(sensors.Cpu):
     @staticmethod
     def fan_percent(fan_name: str = None) -> float:
         try:
+            entry = _resolve_cpu_fan_entry(fan_name)
+            if entry is not None:
+                return float(entry.percent)
             fans = sensors_fans()
             if fans:
-                for name, entries in fans.items():
-                    for entry in entries:
-                        if fan_name is not None and fan_name == "%s/%s" % (name, entry.label):
-                            # Manually selected fan
-                            return entry.percent
-                        elif is_cpu_fan(entry.label) or is_cpu_fan(name):
-                            # Auto-detected fan
-                            return entry.percent
+                return _motherboard_fan_percent(fans)
         except:
             pass
 
+        return math.nan
+
+    @staticmethod
+    def fan_rpm(fan_name: str = None) -> float:
+        try:
+            entry = _resolve_cpu_fan_entry(fan_name)
+            if entry is not None and entry.current > 0:
+                return float(entry.current)
+        except:
+            pass
         return math.nan
 
 
@@ -241,6 +419,68 @@ class Gpu(sensors.Gpu):
         return DETECTED_GPU != GpuType.UNSUPPORTED
 
 
+_NVIDIA_CACHE: dict[str, float] = {}
+_NVIDIA_CACHE_TIME = 0.0
+_NVIDIA_CACHE_TTL = 3.0
+
+
+def _nvidia_smi_bin() -> str | None:
+    found = shutil.which("nvidia-smi")
+    if found:
+        return found
+    for candidate in ("/usr/bin/nvidia-smi", "/usr/local/bin/nvidia-smi"):
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+
+def _parse_nvidia_field(raw: str) -> float:
+    cleaned = raw.replace("%", "").strip().strip("[]")
+    if not cleaned or cleaned.upper() in ("N/A", "NA", "NONE", "NOT SUPPORTED"):
+        return math.nan
+    return float(cleaned)
+
+
+def _refresh_nvidia_cache() -> None:
+    global _NVIDIA_CACHE, _NVIDIA_CACHE_TIME
+    smi = _nvidia_smi_bin()
+    if smi is None:
+        return
+    now = __import__("time").time()
+    if _NVIDIA_CACHE and now - _NVIDIA_CACHE_TIME < _NVIDIA_CACHE_TTL:
+        return
+    try:
+        result = subprocess.run(
+            [smi, "--query-gpu=fan.speed,clocks.gr", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return
+        parts = result.stdout.strip().split("\n")[0].split(",")
+        if len(parts) >= 2:
+            fan_val = _parse_nvidia_field(parts[0])
+            clock_val = _parse_nvidia_field(parts[1])
+            cache: dict[str, float] = {}
+            if not math.isnan(fan_val):
+                cache["fan.speed"] = fan_val
+            if not math.isnan(clock_val):
+                cache["clocks.gr"] = clock_val
+            if cache:
+                _NVIDIA_CACHE = cache
+                _NVIDIA_CACHE_TIME = now
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
+
+
+def _nvidia_smi_float(field: str) -> float:
+    _refresh_nvidia_cache()
+    value = _NVIDIA_CACHE.get(field)
+    return value if value is not None else math.nan
+
+
 class GpuNvidia(sensors.Gpu):
     @staticmethod
     def stats() -> Tuple[
@@ -281,11 +521,20 @@ class GpuNvidia(sensors.Gpu):
 
     @staticmethod
     def fps() -> int:
-        # Not supported by Python libraries
+        # FPS real solo vía archivo externo en Linux (MangoHud/script). No confundir con MHz de GPU.
+        if sys.platform == "linux":
+            external = _read_external_fps()
+            if external >= 0:
+                return external
         return -1
 
     @staticmethod
     def fan_percent() -> float:
+        if sys.platform == "linux":
+            fan_speed = _nvidia_smi_float("fan.speed")
+            if not math.isnan(fan_speed) and fan_speed >= 0:
+                return fan_speed
+
         try:
             fans = sensors_fans()
             if fans:
@@ -300,7 +549,10 @@ class GpuNvidia(sensors.Gpu):
 
     @staticmethod
     def frequency() -> float:
-        # Not supported by Python libraries
+        if sys.platform == "linux":
+            clock_mhz = _nvidia_smi_float("clocks.gr")
+            if not math.isnan(clock_mhz):
+                return clock_mhz
         return math.nan
 
     @staticmethod
