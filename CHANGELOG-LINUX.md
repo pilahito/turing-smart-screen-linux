@@ -1,5 +1,15 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.3-linux-ubuntu] - 2026-06-23
+
+### Nuevo
+- `scripts/fetch-community-themes.sh` — descarga temas 3.5" de GitHub (RedLineGraphs, CpuGpuStatsMono)
+- `scripts/theme-gallery.sh` — galería HTML con previews en el navegador
+- `scripts/start-virtual-screen.sh` — pantalla virtual en el PC (modo SIMU)
+- `scripts/preview-window.py` — ventana espejo flotante (colocable en DP-0 / HDMI-0)
+- `scripts/restore-usb-screen.sh` — vuelve a la pantalla USB física
+- Menú ampliado: galería, comunidad, pantalla virtual, espejo, filtros landscape/portrait
+
 ## [1.0.2-linux-ubuntu] - 2026-06-23
 
 ### Mejorado

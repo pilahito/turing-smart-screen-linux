@@ -55,6 +55,8 @@ def parse_theme(path: Path) -> dict | None:
         "size": size,
         "orient": orient or "?",
         "author": author,
+        "w": w,
+        "h": h,
         "has_preview": (path.parent / "preview.png").exists(),
     }
 
@@ -67,7 +69,23 @@ for yaml in sorted(themes_dir.glob("*/theme.yaml")):
         continue
     if size_filter:
         sf = size_filter.lower().replace('"', "")
-        if sf not in info["size"].lower() and sf not in info["name"].lower():
+        is_35 = (
+            "3.5" in info["size"]
+            or (info["w"], info["h"]) in ((480, 320), (320, 480))
+            or "3.5" in info["name"].lower()
+        )
+        if sf in ("landscape", "l", "horiz"):
+            is_land = info["orient"] == "landscape" or (info["w"], info["h"]) == (480, 320)
+            if not (is_35 and is_land):
+                continue
+        elif sf in ("portrait", "p", "vert"):
+            is_port = info["orient"] == "portrait" or (info["w"], info["h"]) == (320, 480)
+            if not (is_35 and is_port):
+                continue
+        elif sf in ("3.5", "35"):
+            if not is_35:
+                continue
+        elif sf not in info["size"].lower() and sf not in info["name"].lower():
             if not (sf in ("3.5", "35") and "3.5" in info["size"]):
                 continue
     rows.append(info)
@@ -84,5 +102,5 @@ for i, r in enumerate(rows, 1):
 
 print()
 print(f"Total: {len(rows)} temas. Usa: ./scripts/set-theme.sh <nombre>")
-print("Filtro por tamaño: ./scripts/list-themes.sh 3.5   (Turing 3.5\" USB)")
+print("Filtros: ./scripts/list-themes.sh 3.5 | landscape | portrait")
 PY

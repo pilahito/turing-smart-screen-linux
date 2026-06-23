@@ -54,7 +54,15 @@ Cambiar tema y reiniciar:
 # o doble clic en "Turing Smart Screen" en Escritorio
 ```
 
-Opciones: elegir tema (1–39), reiniciar, ver log, autostart, ventiladores.
+Opciones del menú:
+- Elegir tema con filtro **landscape / portrait** (41+ temas 3.5")
+- **Galería visual** de temas en el navegador
+- **Descargar temas** de la comunidad (RedLineGraphs, CpuGpuStatsMono, …)
+- **Pantalla virtual** en el PC (modo SIMU + navegador + ventana espejo en DP-0/HDMI-0)
+- Reiniciar monitor, log, autostart, ventiladores
+
+> La mini pantalla USB **no es un monitor extendido** de escritorio (limitación del hardware).  
+> Sí puedes verla en vivo en tu PC con la opción *Pantalla virtual* del menú.
 
 ## Comandos útiles
 

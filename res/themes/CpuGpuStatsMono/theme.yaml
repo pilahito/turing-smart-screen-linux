@@ -1,0 +1,434 @@
+---
+author: "@Yevgeniy-Olexandrenko"
+display:
+  DISPLAY_SIZE: 3.5"
+  DISPLAY_ORIENTATION: portrait
+  DISPLAY_RGB_LED: 0, 0, 0
+
+static_images:
+  BACKGROUND:
+    PATH: background.png
+    X: 0
+    Y: 0
+    WIDTH: 320
+    HEIGHT: 480
+
+  CPU_ICON:
+    PATH: cpu_icon.png
+    X: 40
+    Y: 16
+    WIDTH: 80
+    HEIGHT: 80
+
+  GPU_ICON:
+    PATH: gpu_icon.png
+    X: 200
+    Y: 16
+    WIDTH: 80
+    HEIGHT: 80
+
+static_text:
+  CPU:
+    TEXT: i7-7700K
+    X: 22
+    Y: 96
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 20
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  CPU_USAGE:
+    TEXT: USAGE
+    X: 22
+    Y: 150
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  CPU_TEMPERATURE:
+    TEXT: TEMPERATURE
+    X: 22
+    Y: 238
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  CPU_RAM:
+    TEXT: RAM
+    X: 22
+    Y: 328
+    WIDTH: 58
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  CPU_FAN:
+    TEXT: FAN
+    X: 84
+    Y: 328
+    WIDTH: 58
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+
+  GPU:
+    TEXT: RTX 5060
+    X: 178
+    Y: 96
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 20
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  GPU_USAGE:
+    TEXT: USAGE
+    X: 178
+    Y: 150
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm 
+  GPU_TEMPERATURE:
+    TEXT: TEMPERATURE
+    X: 178
+    Y: 238
+    WIDTH: 120
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  GPU_VRAM:
+    TEXT: VRAM
+    X: 178
+    Y: 328
+    WIDTH: 58
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+  GPU_FAN:
+    TEXT: FAN
+    X: 240
+    Y: 328
+    WIDTH: 58
+    FONT: geforce/geforce-bold.ttf
+    FONT_SIZE: 14
+    FONT_COLOR: 150, 150, 150
+    # BACKGROUND_COLOR: 0, 0, 0
+    BACKGROUND_IMAGE: background.png
+    ANCHOR: mm
+ 
+STATS:
+  DATE:
+    INTERVAL: 10
+    HOUR:
+      TEXT:
+        FORMAT: short
+        SHOW: true
+        X: 120
+        Y: 40
+        WIDTH: 80
+        HEIGHT: 30
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 26
+        FONT_COLOR: 240, 240, 240
+        BACKGROUND_COLOR: 48, 48, 52
+        # BACKGROUND_COLOR: 0, 0, 0
+        ANCHOR: mm
+
+  CPU:
+    FREQUENCY:
+      INTERVAL: 2
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 22
+        Y: 116
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 14
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ANCHOR: mm
+    PERCENTAGE:
+      INTERVAL: 2
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 22
+        Y: 166
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 40
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ALIGN: center
+        ANCHOR: mm
+      GRAPH:
+        SHOW: true
+        X: 22
+        Y: 208
+        WIDTH: 120
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 150, 150, 150
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+      LINE_GRAPH:
+        SHOW: True
+        X: 22
+        Y: 398
+        WIDTH: 120
+        HEIGHT: 60
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        HISTORY_SIZE: 60
+        AUTOSCALE: false
+        LINE_COLOR: 240, 240, 240
+        LINE_WIDTH: 1
+        AXIS: True
+        AXIS_COLOR: 150, 150, 150
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+    TEMPERATURE:
+      INTERVAL: 2
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 22
+        Y: 254
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 40
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ANCHOR: mm
+      GRAPH:
+        SHOW: true
+        X: 22
+        Y: 296
+        WIDTH: 120
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 150, 150, 150
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+    FAN_SPEED:
+      INTERVAL: 2
+      RADIAL:
+        SHOW: True
+        X: 113
+        Y: 374
+        RADIUS: 29
+        WIDTH: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 150
+        ANGLE_END: 30
+        ANGLE_STEPS: 1
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 150, 150, 150
+        BAR_BACKGROUND_COLOR:  0, 0, 0
+        DRAW_BAR_BACKGROUND: True
+        SHOW_TEXT: True
+        SHOW_UNIT: False
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 18
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        CUSTOM_BBOX: [0, 0, 58, 44]
+        TEXT_OFFSET: [-2, 0]
+
+  MEMORY:
+    INTERVAL: 2
+    VIRTUAL:
+      RADIAL:
+        SHOW: True
+        X: 51
+        Y: 374
+        RADIUS: 29
+        WIDTH: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 150
+        ANGLE_END: 30
+        ANGLE_STEPS: 1
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 150, 150, 150
+        BAR_BACKGROUND_COLOR:  0, 0, 0
+        DRAW_BAR_BACKGROUND: True
+        SHOW_TEXT: True
+        SHOW_UNIT: False
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 18
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        CUSTOM_BBOX: [0, 0, 58, 44]
+        TEXT_OFFSET: [-2, 0]
+
+  GPU:
+    INTERVAL: 2
+    FREQUENCY:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 178
+        Y: 116
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 14
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ANCHOR: mm
+    PERCENTAGE:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 178
+        Y: 166
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 40
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ANCHOR: mm
+      GRAPH:
+        SHOW: true
+        X: 178
+        Y: 208
+        WIDTH: 120
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 150, 150, 150
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+      LINE_GRAPH:
+        SHOW: True
+        X: 178
+        Y: 398
+        WIDTH: 120
+        HEIGHT: 60
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        HISTORY_SIZE: 60
+        AUTOSCALE: false
+        LINE_COLOR: 240, 240, 240
+        LINE_WIDTH: 1
+        AXIS: True
+        AXIS_COLOR: 150, 150, 150
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+    TEMPERATURE:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 178
+        Y: 254
+        WIDTH: 120
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 40
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        ANCHOR: mm
+      GRAPH:
+        SHOW: true
+        X: 178
+        Y: 296
+        WIDTH: 120
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 150, 150, 150
+        BAR_OUTLINE: False
+        BACKGROUND_COLOR: 0, 0, 0
+        # BACKGROUND_IMAGE: background.png
+    MEMORY_PERCENT:
+      RADIAL:
+        SHOW: True
+        X: 207
+        Y: 374
+        RADIUS: 29
+        WIDTH: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 150
+        ANGLE_END: 30
+        ANGLE_STEPS: 1
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 150, 150, 150
+        BAR_BACKGROUND_COLOR:  0, 0, 0
+        DRAW_BAR_BACKGROUND: True
+        SHOW_TEXT: True
+        SHOW_UNIT: False
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 18
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        CUSTOM_BBOX: [0, 0, 58, 44]
+        TEXT_OFFSET: [-2, 0]
+    FAN_SPEED:
+      RADIAL:
+        SHOW: True
+        X: 269
+        Y: 374
+        RADIUS: 29
+        WIDTH: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 150
+        ANGLE_END: 30
+        ANGLE_STEPS: 1
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 150, 150, 150
+        BAR_BACKGROUND_COLOR:  0, 0, 0
+        DRAW_BAR_BACKGROUND: True
+        SHOW_TEXT: True
+        SHOW_UNIT: False
+        FONT: geforce/geforce-bold.ttf
+        FONT_SIZE: 18
+        FONT_COLOR: 240, 240, 240
+        # BACKGROUND_COLOR: 0, 0, 0
+        BACKGROUND_IMAGE: background.png
+        CUSTOM_BBOX: [0, 0, 58, 44]
+        TEXT_OFFSET: [-2, 0]
