@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Turing Smart Screen
+Comment=Menú de la mini pantalla USB (temas, reinicio, log)
+Exec=bash -lc 'TURING_SCREEN_DIR=%PROJECT_DIR% %PROJECT_DIR%/scripts/turing-menu.sh'
+Icon=utilities-system-monitor
+Terminal=true
+Categories=System;Monitor;
+StartupNotify=true

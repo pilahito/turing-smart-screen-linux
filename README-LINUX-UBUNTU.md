@@ -1,6 +1,6 @@
 # Turing Smart Screen — Linux / Ubuntu
 
-Versión **1.0.0-linux-ubuntu** — monitor de sistema en mini pantalla USB (Turing 3.5", QinHeng `1a86:5722`, etc.).
+Versión **1.0.1-linux-ubuntu** — monitor de sistema en mini pantalla USB (Turing 3.5", QinHeng `1a86:5722`, etc.).
 
 Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0) con mejoras para **Ubuntu 24.04**:
 
@@ -44,9 +44,19 @@ Cambiar tema y reiniciar:
 ./scripts/set-theme.sh LandscapeModernDevice35
 ```
 
+## Menú en el escritorio
+
+```bash
+./scripts/install-desktop-menu.sh
+# o doble clic en "Turing Smart Screen" en Escritorio
+```
+
+Opciones: elegir tema (1–39), reiniciar, ver log, autostart, ventiladores.
+
 ## Comandos útiles
 
 ```bash
+./scripts/turing-menu.sh
 systemctl --user status turing-smart-screen turing-fps
 ./scripts/set-theme.sh Cyberdeck
 tail -f /tmp/turing-screen.log

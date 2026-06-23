@@ -1,5 +1,12 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.1-linux-ubuntu] - 2026-06-23
+
+### Nuevo
+- `scripts/turing-menu.sh` — menú interactivo (temas por número, reinicio, log, autostart, fans)
+- `scripts/install-desktop-menu.sh` — icono en Escritorio / Desktop
+- `Turing-Smart-Screen.desktop` — lanzador con doble clic
+
 ## [1.0.0-linux-ubuntu] - 2026-06-23
 
 ### Nuevo

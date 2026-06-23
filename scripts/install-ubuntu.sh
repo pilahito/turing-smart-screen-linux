@@ -73,6 +73,10 @@ echo "→ Instalando arranque automático al iniciar sesión..."
 "$DIR/scripts/install-autostart.sh"
 
 echo ""
+echo "→ Acceso directo en el escritorio..."
+"$DIR/scripts/install-desktop-menu.sh"
+
+echo ""
 echo "══════════════════════════════════════════════════"
 echo "✓ Instalación completada — $VERSION"
 echo ""
