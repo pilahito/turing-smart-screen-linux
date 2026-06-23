@@ -1,7 +1,70 @@
-# ![Icon](https://raw.githubusercontent.com/mathoudebine/turing-smart-screen-python/main/res/icons/monitor-icon-17865/24.png) turing-smart-screen-python
+<div align="center">
 
-> [!TIP]
-> **Linux / Ubuntu (fork pilahito):** instalación rápida, 72 temas incluidos, menú en Escritorio, autostart, FPS y ventiladores CPU — ver **[README-LINUX-UBUNTU.md](README-LINUX-UBUNTU.md)** · [Releases](https://github.com/pilahito/turing-smart-screen-linux/releases)
+# 🐧 Turing Smart Screen — Linux Edition
+
+**Versión mejorada para Linux / Ubuntu** · por [**pilahito**](https://github.com/pilahito)
+
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](README-LINUX-UBUNTU.md)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%2B-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](README-LINUX-UBUNTU.md)
+[![Release](https://img.shields.io/github/v/release/pilahito/turing-smart-screen-linux?label=release&style=for-the-badge)](https://github.com/pilahito/turing-smart-screen-linux/releases)
+[![Licence](https://img.shields.io/github/license/pilahito/turing-smart-screen-linux?style=for-the-badge)](LICENSE)
+
+Monitor de sistema en **mini pantalla USB Turing** (3.5", 5", 8.8"…) con instalación en un comando,  
+**41+ temas**, menú en el Escritorio, autostart, FPS, ventiladores CPU/GPU y galería visual.
+
+[📖 Guía Linux completa](README-LINUX-UBUNTU.md) · [⬇️ Releases](https://github.com/pilahito/turing-smart-screen-linux/releases) · [🔧 Changelog Linux](CHANGELOG-LINUX.md)
+
+</div>
+
+---
+
+## ¿Por qué esta versión?
+
+Fork mantenido de [mathoudebine/turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0) con mejoras pensadas para **uso real en Linux**:
+
+| Mejora | Descripción |
+|--------|-------------|
+| **Instalador Ubuntu** | `./scripts/install-ubuntu.sh` — venv, dialout, tema, autostart |
+| **Menú interactivo** | Escritorio + `turing-menu.sh` — temas, galería, reinicio, log |
+| **Autostart** | systemd user + `.desktop` — Cinnamon, GNOME, MATE, XFCE |
+| **41+ temas 3.5"** | Incluidos + comunidad (RedLineGraphs, CpuGpuStatsMono…) |
+| **Galería HTML** | Previews en el navegador antes de elegir tema |
+| **Pantalla virtual** | Ver la mini pantalla en tu monitor (modo SIMU + espejo) |
+| **FPS en Linux** | `turing-fps.service` — Hz del monitor o MangoHud |
+| **Ventiladores** | Gigabyte B760 (`it87`) + NVIDIA vía `nvidia-smi` |
+| **USB QinHeng** | Detección `/dev/ttyACM*` (`1a86:5722`) |
+
+## Instalación rápida
+
+```bash
+git clone https://github.com/pilahito/turing-smart-screen-linux.git
+cd turing-smart-screen-linux
+./scripts/install-ubuntu.sh
+```
+
+Menú en el Escritorio: `./scripts/install-desktop-menu.sh`
+
+## Capturas de temas
+
+<img src="res/themes/Cyberdeck/preview.png" height="140" alt="Cyberdeck" />
+<img src="res/themes/LandscapeModernDevice35/preview.png" height="140" alt="LandscapeModernDevice35" />
+<img src="res/themes/bash-dark-green-gpu/preview.png" height="140" alt="bash-dark-green-gpu" />
+<img src="res/themes/Terminal/preview.png" height="140" alt="Terminal" />
+
+[Ver todos los temas →](res/themes/themes.md)
+
+---
+
+> [!NOTE]
+> **Proyecto base:** este repo incluye el código completo de *turing-smart-screen-python* más scripts y documentación Linux.  
+> No está afiliado a Turing / XuanFang / Kipye. Ver [avisos legales](#avisos) abajo.
+
+<details>
+<summary><strong>📚 Documentación original del proyecto upstream (Windows, macOS, API, wiki…)</strong></summary>
+
+<br/>
+
+# ![Icon](res/icons/monitor-icon-17865/24.png) turing-smart-screen-python (upstream)
 
 > [!WARNING]
 > 
@@ -28,36 +91,6 @@ Supported operating systems : macOS, Windows, Linux (incl. Raspberry Pi), basica
 |---------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
 | <img src="res/docs/xuanfang.webp"/>               | <img src="res/docs/UsbPCMonitor_5inch.webp" width="60%" height="60%"/>                              | <img src="res/docs/kipye-qiye-35.webp" width="60%" height="60%"/>                |
 | revision B & flagship (with backplate & RGB LEDs) | Unknown manufacturer, visually similar to Turing 3.5" / 5". Original software is `UsbPCMonitor.exe` | Front panel has an engraved inscription "奇叶智显" Qiye Zhixian (Qiye Smart Display) |
-
-| ✅ WeAct Studio Display FS V1 0.96"                            | ✅ WeAct Studio Display FS V1 3.5"                            |
-|---------------------------------------------------------------|--------------------------------------------------------------|
-| <img src="res/docs/weact_0.96.jpg" width="60%" height="60%"/> | <img src="res/docs/weact_3.5.png" width="60%" height="60%"/> |
-
-<details>
-
-<summary><h3>❌ Not (yet) supported / not tested smart screen models</h3></summary>
-
-| ❔ _AIDA64 / AX206 / USB2LCD..._                                                                                                                                                                        | ❔ _[ACEMAGIC S1 Mini PC - integrated 1,9″ display](https://acemagic.com/products/acemagic-s1-12th-alder-laker-n95-mini-pc)_                                  |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="res/docs/ax206.jpg" width="45%" height="45%" /> <img src="res/docs/geekteches_ad35.jpg" width="45%" height="45%" /> <br/> <img src="res/docs/smartcool_lcd.webp" width="45%" height="45%" /> | <img src="res/docs/acemagic-s1-mini.jpg"/>                                                                                                                   |
-| Not supported for now. Produced by multiple manufacturers, all use the same [Appotech AX206 hacked photo frame firmware](https://github.com/dreamlayers/dpf-ax). Supported by AIDA64 and lcd4linux     | Not supported for now but could be integrated: protocol has been decoded, [see here](https://github.com/mathoudebine/turing-smart-screen-python/issues/677). |
-
-| ❔ _NXElec BeadaPanel 3/4/5/6/7_                                                                                                                                                                                                                                                                                           |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="res/docs/beadapanel-3.jpg" width="30%" height="30%" /> <img src="res/docs/beadapanel-5s.jpg" width="30%" height="30%" /> <img src="res/docs/beadapanel-6.jpg" width="30%" height="30%" />                                                                                                                       |
-| Not supported for now but could be integrated: [Pankel-Link V1.0 Protocol Specification](https://www.nxelec.com/documents/bp/Panel-Link_USB_Media_Stream_Transport_Protocol_Rev10.pdf) / [Status-Link V1.1 Protocol Specification](https://www.nxelec.com/documents/bp/Status-Link_USB_Panel_Control_Protocol_Rev11.pdf). |
-
-| ❌ _Waveshare [2.1inch](https://www.waveshare.com/wiki/2.1inch-USB-Monitor) / [2.8inch](https://www.waveshare.com/wiki/2.8inch-USB-Monitor) / [5inch](https://www.waveshare.com/wiki/5inch-USB-Monitor) / [7inch](https://www.waveshare.com/wiki/7inch-USB-Monitor) USB-Monitor_                                                                                                            | ❌ _[GUITION Smart screen 3.5"](https://aliexpress.com/item/1005006169962183.html)_                                                                                                                                                                                                          |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="res/docs/waveshare-21inch-28inch.png"/>                                                                                                                                                                                                                                                                                                                                          | <img src="res/docs/guition.webp"/>                                                                                                                                                                                                                                                          |
-| Sold on [Waveshare shop](https://www.waveshare.com/2.8inch-usb-monitor.htm) or [Aliexpress](https://fr.aliexpress.com/item/1005006071685067.html). Managed by [proprietary Windows software "Waveshare PC Monitor"](https://github.com/mathoudebine/turing-smart-screen-python/wiki/Vendor-apps#waveshare-pc-monitor---vendor-app). Cannot be supported by this project: needs a firmware. | Managed by [proprietary Windows software "GUITION Smart screen"](https://github.com/mathoudebine/turing-smart-screen-python/wiki/Vendor-apps#guition---vendor-app). Cannot be supported by this project: [see here](https://github.com/mathoudebine/turing-smart-screen-python/issues/426). |
-
-| ❌ _[(Fuldho?) 3.5" IPS Screen](https://aliexpress.com/item/1005005632018367.html)_                                                                                                                                                     |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <img src="res/docs/fuldho_3.5.jpg" width="40%" height="40%" />                                                                                                                                                                         |
-| Managed by [proprietary Windows software `SmartMonitor.exe`](https://smartdisplay.lanzouo.com/b04jvavkb). Cannot be supported by this project: [see here](https://github.com/mathoudebine/turing-smart-screen-python/discussions/298). |
-
-</details>
 
 ### [> What is my smart screen model?](https://github.com/mathoudebine/turing-smart-screen-python/wiki/Hardware-revisions)  
 
@@ -92,43 +125,19 @@ Some themes are already included for a quick start!
 * Tray icon with Exit option, useful when the program is running in background.
 
 ### [> List and preview of included themes](res/themes/themes.md)
-<img src="res/themes/3.5inchTheme2/preview.png" height="150" /> <img src="res/themes/Terminal/preview.png" height="150" /> <img src="res/themes/Cyberpunk-net/preview.png" height="150" /> <img src="res/themes/bash-dark-green-gpu/preview.png" height="150" /> <img src="res/themes/Landscape6Grid/preview.png" width="150" /> <img src="res/themes/LandscapeMagicBlue/preview.png" width="150" /> <img src="res/themes/LandscapeEarth/preview.png" width="150" /> ... [view full list](res/themes/themes.md)
+
 ### [> Themes creation/edition (using theme editor)](https://github.com/mathoudebine/turing-smart-screen-python/wiki/System-monitor-:-themes)
-### [> Themes shared by the community](https://github.com/mathoudebine/turing-smart-screen-python/discussions/categories/themes)
-<img src="https://user-images.githubusercontent.com/79225820/203648707-6f043068-5c9d-454d-9c0a-3d9ea02ece77.jpg" height="150" /> <img src="https://user-images.githubusercontent.com/121983479/210663324-994c987a-6489-4482-8883-db74ef566014.jpg" height="150" />
-<img src="https://user-images.githubusercontent.com/120036534/208128675-897f60cd-5647-40b7-b074-b56b67e775dd.png" height="150" /> <img src="https://user-images.githubusercontent.com/65172896/217549510-149913ac-ef4e-4f61-8f5e-6d768483a02c.png" height="150" /> and more... Share yours!
-
-## Control the display from your Python projects
-
-If you don't want to use your screen for system monitoring, you can just use this project as a module from any Python code to do some simple operations on the display:
-- **Display custom picture**
-- **Display text**
-- **Display horizontal / radial progress bar**
-- **Screen rotation**
-- Clear the screen (blank)
-- Turn the screen on/off
-- Display soft reset
-- Set brightness
-- Set backplate RGB LEDs color (on supported hardware rev.) 
-
-This project will act as an abstraction library to handle specific protocols and capabilities of each supported smart screen models in a transparent way for the user.
-Check `simple-program.py` as an example.
 
 ### [> Control the display from your code](https://github.com/mathoudebine/turing-smart-screen-python/wiki/Control-screen-from-your-own-code)
 
-## Troubleshooting
-If you have trouble running the program as described in the wiki, please check [open/closed issues](https://github.com/mathoudebine/turing-smart-screen-python/issues) & [the wiki Troubleshooting page](https://github.com/mathoudebine/turing-smart-screen-python/wiki/Troubleshooting)
+</details>
 
-## They're talking about it!
+## Avisos
 
-* [Hackaday - Cheap LCD Uses USB Serial](https://hackaday.com/2023/09/11/cheap-lcd-uses-usb-serial/)  
+Este software es una alternativa open-source basada en [turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0).  
+**No está afiliado** a Turing, XuanFang, Kipye ni a sus fabricantes.  
+Para hardware Turing: [foro oficial](http://discuz.turzx.com/).
 
+## Autor Linux Edition
 
-* [CNX Software - Turing Smart Screen – A low-cost 3.5-inch USB Type-C information display](https://www.cnx-software.com/2022/04/29/turing-smart-screen-a-low-cost-3-5-inch-usb-type-c-information-display/)
-
-
-* [Phazer Tech - Turing Smart Screen Python ](https://phazertech.com/tutorials/turing-smart-screen.html)
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=mathoudebine/turing-smart-screen-python&type=Date)](https://star-history.com/#mathoudebine/turing-smart-screen-python&Date)
+**David / [pilahito](https://github.com/pilahito)** — scripts, menú, autostart, temas y documentación para Ubuntu/Debian.

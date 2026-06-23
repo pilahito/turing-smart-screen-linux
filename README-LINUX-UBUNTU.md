@@ -1,6 +1,8 @@
 # Turing Smart Screen — Linux / Ubuntu
 
-Versión **1.0.1-linux-ubuntu** — monitor de sistema en mini pantalla USB (Turing 3.5", QinHeng `1a86:5722`, etc.).
+Versión **1.0.4-linux-ubuntu** — monitor de sistema en mini pantalla USB (Turing 3.5", QinHeng `1a86:5722`, etc.).
+
+> **Repositorio:** [github.com/pilahito/turing-smart-screen-linux](https://github.com/pilahito/turing-smart-screen-linux) — edición mejorada para Linux.
 
 Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0) con mejoras para **Ubuntu 22.04+ / Debian 12+**:
 

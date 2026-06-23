@@ -1,5 +1,12 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.4-linux-ubuntu] - 2026-06-23
+
+### Mejorado
+- README principal rebranded como **Turing Smart Screen — Linux Edition**
+- Perfil GitHub [pilahito](https://github.com/pilahito) con proyecto destacado
+- Descripción y topics del repo orientados a “versión mejorada para Linux”
+
 ## [1.0.3-linux-ubuntu] - 2026-06-23
 
 ### Nuevo
