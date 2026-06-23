@@ -1,5 +1,8 @@
 # ![Icon](https://raw.githubusercontent.com/mathoudebine/turing-smart-screen-python/main/res/icons/monitor-icon-17865/24.png) turing-smart-screen-python
 
+> [!TIP]
+> **Linux / Ubuntu (fork pilahito):** instalación rápida, 72 temas incluidos, menú en Escritorio, autostart, FPS y ventiladores CPU — ver **[README-LINUX-UBUNTU.md](README-LINUX-UBUNTU.md)** · [Releases](https://github.com/pilahito/turing-smart-screen-linux/releases)
+
 > [!WARNING]
 > 
 > This project is **not affiliated, associated, authorized, endorsed by, or in any way officially connected with Turing / XuanFang / Kipye brands**, or any of theirs subsidiaries, affiliates, manufacturers or sellers of their products. All product and company names are the registered trademarks of their original owners.

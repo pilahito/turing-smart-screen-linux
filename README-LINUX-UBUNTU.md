@@ -2,13 +2,16 @@
 
 Versión **1.0.1-linux-ubuntu** — monitor de sistema en mini pantalla USB (Turing 3.5", QinHeng `1a86:5722`, etc.).
 
-Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0) con mejoras para **Ubuntu 24.04**:
+Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-smart-screen-python) (GPL-3.0) con mejoras para **Ubuntu 22.04+ / Debian 12+**:
 
 - Arranque automático al iniciar sesión (systemd user + autostart)
-- Detección USB `/dev/ttyACM*`
+- Compatible con **Cinnamon, GNOME, MATE, XFCE** (autostart vía `.desktop` + systemd user)
+- Detección USB `/dev/ttyACM*` (QinHeng `1a86:5722`)
 - FPS en Linux (`turing-fps.service` → Hz del monitor o MangoHud)
 - Ventiladores CPU en placas Gigabyte (`it87` + `force_id=0x8622`)
+- GPU NVIDIA: temperatura y uso vía `nvidia-smi` (ventilador GPU si el driver lo expone)
 - Selector de **temas ya incluidos** en `res/themes/`
+- [Releases](https://github.com/pilahito/turing-smart-screen-linux/releases) con versiones etiquetadas
 
 ## Instalación rápida (Ubuntu)
 

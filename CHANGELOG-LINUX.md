@@ -1,5 +1,12 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.2-linux-ubuntu] - 2026-06-23
+
+### Mejorado
+- Banner en `README.md` principal → enlace a guía Linux/Ubuntu y releases
+- `README-LINUX-UBUNTU.md`: Cinnamon/MATE/XFCE, GPU NVIDIA, enlaces a releases
+- Topics de GitHub para mejor descubrimiento del repositorio
+
 ## [1.0.1-linux-ubuntu] - 2026-06-23
 
 ### Nuevo
