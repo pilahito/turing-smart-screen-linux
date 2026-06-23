@@ -14,6 +14,16 @@ static_images:
     WIDTH: 480
     HEIGHT: 320
 
+static_text:
+  LABEL:
+    TEXT: pilahito
+    X: 8
+    Y: 302
+    FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+    FONT_SIZE: 9
+    FONT_COLOR: 21, 176, 231
+    BACKGROUND_IMAGE: background.png
+
 STATS:
   CPU:
     PERCENTAGE:
@@ -64,7 +74,7 @@ STATS:
         ANGLE_STEPS: 20
         ANGLE_SEP: 0
         CLOCKWISE: True
-        BAR_COLOR: 248, 177, 51
+        BAR_COLOR: 200, 100, 50
         SHOW_TEXT: True
         SHOW_UNIT: True
         FONT: roboto/Roboto-Bold.ttf
@@ -148,6 +158,27 @@ STATS:
         FONT_SIZE: 23
         FONT_COLOR: 248, 177, 51
         BACKGROUND_IMAGE: background.png
+    FAN_SPEED:
+      RADIAL:
+        SHOW: True
+        X: 233
+        Y: 68
+        RADIUS: 31
+        WIDTH: 13
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 320
+        ANGLE_END: 320
+        ANGLE_STEPS: 20
+        ANGLE_SEP: 0
+        CLOCKWISE: False
+        BAR_COLOR: 200, 100, 50
+        SHOW_TEXT: True
+        SHOW_UNIT: True
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 15
+        FONT_COLOR: 248, 177, 51
+        BACKGROUND_IMAGE: background.png
     FPS:
       TEXT:
         SHOW: True
@@ -161,26 +192,15 @@ STATS:
         FONT_SIZE: 27
         FONT_COLOR: 255, 255, 255
         BACKGROUND_IMAGE: background.png
-  DATE:
-    INTERVAL: 30
-    DAY:
+    FREQUENCY:
       TEXT:
-        SHOW: True
-        X: 400
-        Y: 12
-        FONT: roboto/Roboto-Bold.ttf
-        FONT_SIZE: 14
-        FONT_COLOR: 140, 160, 190
-        BACKGROUND_IMAGE: background.png
-    HOUR:
-      TEXT:
-        SHOW: True
-        X: 400
-        Y: 28
-        FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
-        FONT_SIZE: 16
-        FONT_COLOR: 21, 176, 231
-        BACKGROUND_IMAGE: background.png
+        SHOW: False
+      GRAPH:
+        SHOW: False
+      RADIAL:
+        SHOW: False
+      LINE_GRAPH:
+        SHOW: False
   NET:
     INTERVAL: 5
     ETH:
@@ -191,7 +211,7 @@ STATS:
           Y: 293
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 10
-          FONT_COLOR: 200, 210, 230
+          FONT_COLOR: 255, 255, 255
           BACKGROUND_IMAGE: background.png
       DOWNLOAD:
         TEXT:
@@ -200,5 +220,5 @@ STATS:
           Y: 257
           FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
           FONT_SIZE: 10
-          FONT_COLOR: 200, 210, 230
+          FONT_COLOR: 255, 255, 255
           BACKGROUND_IMAGE: background.png

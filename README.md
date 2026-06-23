@@ -28,6 +28,7 @@ Fork mantenido de [mathoudebine/turing-smart-screen-python](https://github.com/m
 | **Menú interactivo** | Escritorio + `turing-menu.sh` — temas, galería, reinicio, log |
 | **Autostart** | systemd user + `.desktop` — Cinnamon, GNOME, MATE, XFCE |
 | **41+ temas 3.5"** | Incluidos + comunidad (RedLineGraphs, CpuGpuStatsMono…) |
+| **Tema estable** | **Cyberdeck** por defecto (landscape 3.5" probado) · **Pilahito** = variante cyan |
 | **Galería HTML** | Previews en el navegador antes de elegir tema |
 | **Pantalla virtual** | Ver la mini pantalla en tu monitor (modo SIMU + espejo) |
 | **FPS en Linux** | `turing-fps.service` — Hz del monitor o MangoHud |

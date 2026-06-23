@@ -57,7 +57,9 @@ echo ""
 echo "══ Temas disponibles para pantalla 3.5\" (landscape/portrait) ══"
 "$DIR/scripts/list-themes.sh" 3.5 | head -25
 echo ""
+# Tema estable por defecto: Cyberdeck (landscape 3.5" probado). Pilahito = variante cyan.
 CURRENT="$(grep '^  THEME:' "$DIR/config.yaml" 2>/dev/null | sed 's/.*: *//' || echo Cyberdeck)"
+CURRENT="${CURRENT:-Cyberdeck}"
 read -r -p "Tema a usar [$CURRENT]: " PICK
 PICK="${PICK:-$CURRENT}"
 if [[ -f "$DIR/res/themes/$PICK/theme.yaml" ]]; then

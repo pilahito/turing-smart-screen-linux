@@ -1,5 +1,18 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.6-linux-ubuntu] - 2026-06-23
+
+### Corregido
+- **Tema Pilahito** bugueado: fondo custom interfería con los gauges → ahora usa layout Cyberdeck probado + colores cyan/rojo
+- Eliminada sección DATE que causaba parpadeos
+- **Cyberdeck** restaurado como tema por defecto estable
+- `scripts/validate-theme.sh` — valida temas antes de publicar
+
+## [1.0.5-linux-ubuntu] - 2026-06-23
+
+### Añadido
+- Tema Pilahito (primera versión — reemplazada en v1.0.6)
+
 ## [1.0.4-linux-ubuntu] - 2026-06-23
 
 ### Mejorado
