@@ -184,6 +184,7 @@ while true; do
   echo "  a) Instalar/reparar autostart"
   echo "  b) Ventiladores CPU (Gigabyte — sudo)"
   echo "  c) Abrir GitHub del proyecto"
+  echo "  p) 🎁 Pilahito Command Center (Escritorio)"
   echo "  0) Salir"
   echo ""
   read -r -p "Opción: " opt
@@ -262,6 +263,12 @@ while true; do
       xdg-open "https://github.com/pilahito/turing-smart-screen-linux" 2>/dev/null \
         || sensible-browser "https://github.com/pilahito/turing-smart-screen-linux" 2>/dev/null \
         || echo "https://github.com/pilahito/turing-smart-screen-linux"
+      pause
+      ;;
+    p|P)
+      xdg-open "$HOME/Escritorio/Pilahito-Command-Center.html" 2>/dev/null \
+        || xdg-open "$HOME/Desktop/Pilahito-Command-Center.html" 2>/dev/null \
+        || echo "Abre: ~/Escritorio/Pilahito-Command-Center.html"
       pause
       ;;
     0|q|Q) exit 0 ;;

@@ -1,0 +1,204 @@
+---
+author: "@pilahito"
+
+display:
+  DISPLAY_SIZE: 3.5"
+  DISPLAY_ORIENTATION: landscape
+  DISPLAY_RGB_LED: 21, 176, 231
+
+static_images:
+  BACKGROUND:
+    PATH: background.png
+    X: 0
+    Y: 0
+    WIDTH: 480
+    HEIGHT: 320
+
+STATS:
+  CPU:
+    PERCENTAGE:
+      INTERVAL: 3
+      RADIAL:
+        SHOW: True
+        X: 80
+        Y: 70
+        RADIUS: 39
+        WIDTH: 15
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 60
+        ANGLE_END: 420
+        ANGLE_STEPS: 20
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 21, 176, 231
+        SHOW_TEXT: True
+        SHOW_UNIT: True
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 20
+        FONT_COLOR: 21, 176, 231
+        BACKGROUND_IMAGE: background.png
+    TEMPERATURE:
+      INTERVAL: 8
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 34
+        Y: 135
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 23
+        FONT_COLOR: 248, 177, 51
+        BACKGROUND_IMAGE: background.png
+    FAN_SPEED:
+      INTERVAL: 10
+      RADIAL:
+        SHOW: True
+        X: 170
+        Y: 130
+        RADIUS: 31
+        WIDTH: 13
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 220
+        ANGLE_END: 220
+        ANGLE_STEPS: 20
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 248, 177, 51
+        SHOW_TEXT: True
+        SHOW_UNIT: True
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 15
+        FONT_COLOR: 248, 177, 51
+        BACKGROUND_IMAGE: background.png
+  MEMORY:
+    INTERVAL: 6
+    VIRTUAL:
+      RADIAL:
+        SHOW: True
+        X: 110
+        Y: 211
+        RADIUS: 31
+        WIDTH: 13
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 20
+        ANGLE_END: 20
+        ANGLE_STEPS: 1
+        ANGLE_SEP: 25
+        CLOCKWISE: True
+        BAR_COLOR: 21, 176, 231
+        SHOW_TEXT: True
+        SHOW_UNIT: True
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 13
+        FONT_COLOR: 21, 176, 231
+        BACKGROUND_IMAGE: background.png
+  GPU:
+    INTERVAL: 4
+    PERCENTAGE:
+      RADIAL:
+        SHOW: True
+        X: 387
+        Y: 166
+        RADIUS: 51
+        WIDTH: 25
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        ANGLE_START: 110
+        ANGLE_END: 110
+        ANGLE_STEPS: 5
+        ANGLE_SEP: 0
+        CLOCKWISE: True
+        BAR_COLOR: 255, 80, 100
+        SHOW_TEXT: True
+        SHOW_UNIT: True
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 20
+        FONT_COLOR: 255, 120, 140
+        BACKGROUND_IMAGE: background.png
+    MEMORY_PERCENT:
+      GRAPH:
+        SHOW: True
+        X: 349
+        Y: 48
+        WIDTH: 102
+        HEIGHT: 9
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 255, 80, 100
+        BAR_OUTLINE: False
+        BACKGROUND_IMAGE: background.png
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 295
+        Y: 46
+        FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+        FONT_SIZE: 20
+        FONT_COLOR: 255, 120, 140
+        BACKGROUND_IMAGE: background.png
+    TEMPERATURE:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: True
+        X: 234
+        Y: 158
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 23
+        FONT_COLOR: 248, 177, 51
+        BACKGROUND_IMAGE: background.png
+    FPS:
+      TEXT:
+        SHOW: True
+        SHOW_UNIT: False
+        X: 46
+        Y: 279
+        WIDTH: 130
+        HEIGHT: 32
+        MIN_SIZE: 3
+        FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+        FONT_SIZE: 27
+        FONT_COLOR: 255, 255, 255
+        BACKGROUND_IMAGE: background.png
+  DATE:
+    INTERVAL: 30
+    DAY:
+      TEXT:
+        SHOW: True
+        X: 400
+        Y: 12
+        FONT: roboto/Roboto-Bold.ttf
+        FONT_SIZE: 14
+        FONT_COLOR: 140, 160, 190
+        BACKGROUND_IMAGE: background.png
+    HOUR:
+      TEXT:
+        SHOW: True
+        X: 400
+        Y: 28
+        FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+        FONT_SIZE: 16
+        FONT_COLOR: 21, 176, 231
+        BACKGROUND_IMAGE: background.png
+  NET:
+    INTERVAL: 5
+    ETH:
+      UPLOAD:
+        TEXT:
+          SHOW: True
+          X: 351
+          Y: 293
+          FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+          FONT_SIZE: 10
+          FONT_COLOR: 200, 210, 230
+          BACKGROUND_IMAGE: background.png
+      DOWNLOAD:
+        TEXT:
+          SHOW: True
+          X: 398
+          Y: 257
+          FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
+          FONT_SIZE: 10
+          FONT_COLOR: 200, 210, 230
+          BACKGROUND_IMAGE: background.png
