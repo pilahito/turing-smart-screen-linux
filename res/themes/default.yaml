@@ -1,5 +1,12 @@
 # This file is used to add mandatory sections to a theme file in case they are missing
 # This is not a theme! Do not use this file to create a new theme, as a lot of content is missing: use theme_example.yaml
+
+# Resolucion por defecto: evita que un tema sin estos campos rompa el arranque
+# (library/display.py los consulta de forma directa y library/config.py los exige).
+display:
+  DISPLAY_SIZE: 3.5"
+  DISPLAY_ORIENTATION: portrait
+
 STATS:
   CPU:
     PERCENTAGE:
