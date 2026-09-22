@@ -227,11 +227,35 @@ License: GPL-3.0-or-later
 # Empaquetado
 # --------------------------------------------------------------------------------------
 def tar_gz(ficheros: list[tuple[str, bytes]], mtime: int,
-           ejecutables: set[str] | None = None) -> bytes:
-    """Crea un .tar.gz con rutas relativas ('./') y permisos correctos."""
+           ejecutables: set[str] | None = None, con_directorios: bool = True) -> bytes:
+    """Crea un .tar.gz con rutas relativas ('./') y permisos correctos.
+
+    `con_directorios` anade las entradas de carpeta: dpkg las necesita para crear
+    /opt/centro-turing y el resto del arbol. Sin ellas falla al instalar con
+    "unable to create ... No such file or directory".
+    """
     ejecutables = ejecutables or set()
     buffer = io.BytesIO()
+
+    def add_dir(tar: tarfile.TarFile, nombre: str) -> None:
+        info = tarfile.TarInfo(name=nombre)
+        info.type = tarfile.DIRTYPE
+        info.mode = 0o755
+        info.mtime = mtime
+        info.uid = info.gid = 0
+        info.uname = info.gname = "root"
+        tar.addfile(info)
+
     with tarfile.open(fileobj=buffer, mode="w") as tar:
+        add_dir(tar, "./")
+        if con_directorios:
+            carpetas = set()
+            for ruta, _ in ficheros:
+                partes = ruta.split("/")[:-1]
+                for indice in range(1, len(partes) + 1):
+                    carpetas.add("/".join(partes[:indice]))
+            for carpeta in sorted(carpetas):  # ordenadas: los padres van antes que los hijos
+                add_dir(tar, "./" + carpeta + "/")
         for ruta, datos in ficheros:
             info = tarfile.TarInfo(name="./" + ruta.lstrip("./"))
             info.size = len(datos)
@@ -370,6 +394,19 @@ def verificar(paquete: Path) -> None:
         assert ruta in contenido, f"falta {ruta}"
     log(f"  data OK: {len(contenido)} entradas (incluye las {len(imprescindibles)} clave)")
 
+    # dpkg necesita las entradas de carpeta: sin ellas falla al instalar con
+    # "unable to create ... No such file or directory"
+    directorios = {n for n, es_dir in listar_tar_gz(miembros[2][1]) if es_dir}
+    faltan = set()
+    for ruta in contenido:
+        partes = ruta.split("/")[:-1]
+        for indice in range(1, len(partes) + 1):
+            carpeta = "/".join(partes[:indice])
+            if carpeta not in directorios:
+                faltan.add(carpeta)
+    assert not faltan, f"faltan entradas de carpeta en data.tar.gz: {sorted(faltan)[:5]}"
+    log(f"  carpetas OK: {len(directorios)} entradas de directorio (dpkg puede crear el arbol)")
+
     fallos = 0
     for linea in contenido["md5sums"].decode().splitlines():
         if not linea.strip():
@@ -398,6 +435,12 @@ def leer_tar_gz(datos: bytes) -> list[tuple[str, bytes]]:
                 fh = tar.extractfile(info)
                 salida.append((info.name.lstrip("./"), fh.read() if fh else b""))
         return salida
+
+
+def listar_tar_gz(datos: bytes) -> list[tuple[str, bool]]:
+    """Lista (ruta, es_directorio) de un tar.gz: sirve para validar la estructura."""
+    with tarfile.open(fileobj=io.BytesIO(datos), mode="r:gz") as tar:
+        return [(info.name.lstrip("./").rstrip("/"), info.isdir()) for info in tar.getmembers()]
 
 
 def main(argv: list[str] | None = None) -> int:
