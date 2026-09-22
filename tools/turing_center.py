@@ -614,30 +614,34 @@ def scan_themes() -> list[ThemeInfo]:
         info = ThemeInfo(name=theme_yaml.parent.name, path=theme_yaml.parent)
         data = _parse_theme_yaml(theme_yaml)
         info.meta = data
-        display = data.get("display") or {}
-        static = data.get("static_images") or {}
-        background = static.get("BACKGROUND") or {}
-        info.size = str(display.get("DISPLAY_SIZE", "") or "").replace('"', "")
-        info.orientation = str(display.get("DISPLAY_ORIENTATION", "") or "").lower()
-        try:
-            info.width = int(background.get("WIDTH") or 0)
-            info.height = int(background.get("HEIGHT") or 0)
-        except (TypeError, ValueError):
-            info.width = info.height = 0
-        if not info.width or not info.height:
-            guess = _background_file(info.path, background)
-            if guess and guess.suffix.lower() == ".png":
-                size = _png_size(guess)
-                if size:
-                    info.width, info.height = size
-        info.background = _background_file(info.path, background)
-        if info.width and info.height:
-            if not info.orientation:
-                info.orientation = "landscape" if info.width >= info.height else "portrait"
-            if not info.size:
-                info.size = _size_from_dims(info.width, info.height)
+        _apply_theme_dimensions(info, data)
         themes.append(info)
     return themes
+
+
+def _apply_theme_dimensions(info: ThemeInfo, data: dict) -> None:
+    """Rellena medida, orientación, resolución y fondo a partir del theme.yaml."""
+    display = data.get("display") or {}
+    static = data.get("static_images") or {}
+    background = static.get("BACKGROUND") or {}
+    info.size = str(display.get("DISPLAY_SIZE", "") or "").replace('"', "")
+    info.orientation = str(display.get("DISPLAY_ORIENTATION", "") or "").lower()
+    try:
+        info.width = int(background.get("WIDTH") or 0)
+        info.height = int(background.get("HEIGHT") or 0)
+    except (TypeError, ValueError):
+        info.width = info.height = 0
+    info.background = _background_file(info.path, background)
+    if not info.width or not info.height:
+        if info.background and info.background.suffix.lower() == ".png":
+            size = _png_size(info.background)
+            if size:
+                info.width, info.height = size
+    if info.width and info.height:
+        if not info.orientation:
+            info.orientation = "landscape" if info.width >= info.height else "portrait"
+        if not info.size:
+            info.size = _size_from_dims(info.width, info.height)
 
 
 def _background_file(folder: Path, background: dict) -> Path | None:
@@ -672,6 +676,20 @@ def _size_from_dims(width: int, height: int) -> str:
     known = {(480, 320): '3.5"', (320, 480): '3.5"', (800, 480): '5"', (480, 800): '5"',
              (1920, 480): '8.8"', (480, 1920): '8.8"', (1280, 800): '8.8"'}
     return known.get((width, height), "")
+
+
+# Filtros del catalogo de temas: etiqueta visible -> predicado sobre ThemeInfo
+THEME_FILTERS = {
+    "Todos": lambda theme: True,
+    '3.5" horizontal (480x320)': lambda theme: (theme.width, theme.height) == (480, 320),
+    '3.5" vertical (320x480)': lambda theme: (theme.width, theme.height) == (320, 480),
+    '5" horizontal (800x480)': lambda theme: (theme.width, theme.height) == (800, 480),
+    '5" vertical (480x800)': lambda theme: (theme.width, theme.height) == (480, 800),
+    '8.8" (1920x480)': lambda theme: (theme.width, theme.height) == (1920, 480),
+    "Horizontal (cualquier medida)": lambda theme: theme.is_landscape,
+    "Vertical (cualquier medida)": lambda theme: not theme.is_landscape,
+}
+THEME_FILTER_LABELS = list(THEME_FILTERS)
 
 
 # --------------------------------------------------------------------------------------
@@ -1129,11 +1147,7 @@ class CentroTuring(tk.Tk):
         row = toolbar.body
 
         tk.Label(row, text="Filtrar", bg=CARD, fg=MUTED, font=(UI_FONT, 9)).pack(side="left")
-        self.theme_filter = ttk.Combobox(row, state="readonly", width=26, values=[
-            "Todos", '3.5" horizontal (480x320)', '3.5" vertical (320x480)',
-            '5" horizontal (800x480)', '5" vertical (480x800)', "8.8\" (1920x480)",
-            "Horizontal (cualquier medida)", "Vertical (cualquier medida)",
-        ])
+        self.theme_filter = ttk.Combobox(row, state="readonly", width=26, values=THEME_FILTER_LABELS)
         self.theme_filter.current(0)
         self.theme_filter.pack(side="left", padx=8)
         self.theme_filter.bind("<<ComboboxSelected>>", lambda _e: self._fill_theme_table())
@@ -1174,30 +1188,11 @@ class CentroTuring(tk.Tk):
     def _filtered_themes(self) -> list[ThemeInfo]:
         choice = self.theme_filter.get() if hasattr(self, "theme_filter") else "Todos"
         query = (self.theme_search.get() if hasattr(self, "theme_search") else "").strip().lower()
-        result = []
-        for theme in self.themes:
-            if query and query not in theme.name.lower():
-                continue
-            if choice == "Todos":
-                pass
-            elif choice.startswith("Horizontal"):
-                if not theme.is_landscape:
-                    continue
-            elif choice.startswith("Vertical"):
-                if theme.is_landscape:
-                    continue
-            elif "480x320" in choice and (theme.width, theme.height) != (480, 320):
-                continue
-            elif "320x480" in choice and (theme.width, theme.height) != (320, 480):
-                continue
-            elif "800x480" in choice and (theme.width, theme.height) != (800, 480):
-                continue
-            elif "480x800" in choice and (theme.width, theme.height) != (480, 800):
-                continue
-            elif "1920x480" in choice and (theme.width, theme.height) != (1920, 480):
-                continue
-            result.append(theme)
-        return result
+        predicate = THEME_FILTERS.get(choice, THEME_FILTERS["Todos"])
+        return [
+            theme for theme in self.themes
+            if (not query or query in theme.name.lower()) and predicate(theme)
+        ]
 
     def _fill_theme_table(self) -> None:
         for row in self.theme_table.get_children():
@@ -1568,14 +1563,14 @@ class CentroTuring(tk.Tk):
 
     def action_check_update(self) -> None:
         def task():
-            output = self.platform._run(["git", "-C", str(ROOT), "fetch", "--quiet"], timeout=120)
+            self.platform._run(["git", "-C", str(ROOT), "fetch", "--quiet"], timeout=120)
             local = self.platform._run(["git", "-C", str(ROOT), "rev-parse", "HEAD"]).strip()[:8]
             remote = self.platform._run(["git", "-C", str(ROOT), "rev-parse", "@{u}"]).strip()[:8]
             if not remote:
                 return False, f"Sin remoto configurado (local {local})"
             if local == remote:
                 return True, f"Al día ({local})"
-            behind = self.platform._run(["git", "-C", str(ROOT), "rev-list", "--count", f"HEAD..@{u}"]).strip()
+            behind = self.platform._run(["git", "-C", str(ROOT), "rev-list", "--count", "HEAD..@{u}"]).strip()
             return True, f"Hay {behind} confirmaciones nuevas ({local} → {remote})"
 
         self.run_bg("Comprobando actualizaciones", task)
