@@ -14,6 +14,7 @@ entre páginas.
 """
 from __future__ import annotations
 
+import queue
 import sys
 import time
 from pathlib import Path
@@ -100,7 +101,10 @@ class App(tk.Tk):
         super().__init__()
         self.platform = make_platform()
         self.config_editor = ConfigEditor()
+        # Catalogo de temas: se lee una vez al abrir (~1,5 s). El estado del monitor,
+        # en cambio, se consulta en segundo plano porque se repite en cada repintado.
         self.themes: list[ThemeInfo] = scan_themes()
+        self.themes_ready = True
         self.page = "panel"
         self.filter = "all"
         self.search = ""
@@ -115,6 +119,13 @@ class App(tk.Tk):
         self.toast_until = 0.0
         self._spark: dict[str, list[float]] = {key: [0.4] * 12 for key in ("cpu", "ram", "gpu", "disk")}
         self._busy = False
+        # El estado del monitor se consulta EN SEGUNDO PLANO y aqui solo se lee el
+        # valor cacheado: is_running() recorre todos los procesos y la primera vez
+        # importa psutil (~2 s), asi que llamarlo desde render() congelaba la ventana.
+        self.status: tuple[bool, str] = (False, "comprobando…")
+        self.ports: list[str] = []
+        self._status_pending = False
+        self._resultados: queue.Queue = queue.Queue()
 
         self.title(f"{APP_NAME} {VERSION} — panel de la mini pantalla USB")
         self.configure(bg=C["bg"])
@@ -140,7 +151,56 @@ class App(tk.Tk):
         self.bind("<Configure>", self._on_resize)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(120, self.render)
+        self.after(100, self._poll_results)
+        self.after(150, self._warm_up)
+        self.after(400, self.refresh_status)
         self.after(2000, self._tick)
+
+    # -- estado en segundo plano ---------------------------------------------------
+    def _warm_up(self) -> None:
+        """Prepara psutil fuera del hilo de la interfaz (importarlo tarda ~2 s)."""
+        def task():
+            try:
+                import psutil  # noqa: F401
+
+                for _ in psutil.process_iter(["pid"]):
+                    pass
+            except Exception:
+                pass
+            return True
+
+        self.run_quiet(task, lambda _resultado: None)
+
+    def run_quiet(self, task, done) -> None:
+        """Tarea en segundo plano sin bloquear ni avisar (consultas de estado)."""
+        import threading
+
+        def worker():
+            try:
+                resultado = task()
+            except Exception:
+                resultado = None
+            self._resultados.put((done, resultado))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def refresh_status(self) -> None:
+        """Pide el estado del monitor (y los puertos) sin bloquear la ventana."""
+        if self._status_pending:
+            return
+        self._status_pending = True
+
+        def task():
+            return self.platform.is_running(), self.platform.serial_ports()
+
+        def done(resultado):
+            self._status_pending = False
+            if resultado:
+                self.status, self.ports = resultado
+                if self.page in ("panel", "sistema", "registro"):
+                    self.render()
+
+        self.run_quiet(task, done)
 
     # -- utilidades ---------------------------------------------------------------
     @staticmethod
@@ -219,9 +279,25 @@ class App(tk.Tk):
                 result = task()
             except Exception as error:  # pragma: no cover - defensivo
                 result = (False, f"Error: {error}")
-            self.after(0, lambda: self._finish(result, done))
+            # La cola la lee el hilo de la interfaz: Tkinter no admite llamarlo desde
+            # otro hilo (after() desde el hilo de trabajo puede fallar en silencio).
+            self._resultados.put((lambda valor: self._finish(valor, done), result))
 
         threading.Thread(target=worker, daemon=True).start()
+
+    def _poll_results(self) -> None:
+        """Recoge en el hilo principal lo que terminan las tareas de fondo."""
+        try:
+            while True:
+                callback, valor = self._resultados.get_nowait()
+                try:
+                    callback(valor)
+                except Exception:
+                    pass
+        except queue.Empty:
+            pass
+        finally:
+            self.after(80, self._poll_results)
 
     def _finish(self, result, done) -> None:
         self._busy = False
@@ -255,6 +331,7 @@ class App(tk.Tk):
                 del series[:-12]
             if self.toast_message and time.time() > self.toast_until:
                 self.toast_message = ""
+            self.refresh_status()
             if self.page in ("panel", "sistema", "registro"):
                 self.render()
         finally:
@@ -363,6 +440,9 @@ class App(tk.Tk):
 
     def act_apply(self) -> None:
         theme = self._selected_theme()
+        if theme is None and not self.themes_ready:
+            self.notify("Cargando el catálogo de temas…")
+            return
         if not theme:
             self.notify("No hay tema seleccionado", error=True)
             return
@@ -501,7 +581,7 @@ class App(tk.Tk):
         self.scene.text("shell", SP["xl"] + 54, 22, f"{APP_NAME} {VERSION}", size=T["h1"], weight="bold")
         self.scene.text("shell", SP["xl"] + 55, 50, "Panel de la mini pantalla USB · Windows y Linux",
                         size=T["small"], color=C["muted"])
-        running, detail = self.platform.is_running()
+        running, detail = self.status
         status_chip = self.scene.cached(
             ("chip_status", running, detail),
             lambda: D.chip("ENCENDIDA" if running else "APAGADA", kind="ok" if running else "danger"))
@@ -593,7 +673,7 @@ class App(tk.Tk):
     def _page_panel(self, x: int, y: int, width: int, height: int, pressed: str) -> None:
         tag, top = "current_page", y + 66
         self._title(tag, x, y, "Panel", "Estado en vivo, vista previa del tema y control rápido.")
-        running, detail = self.platform.is_running()
+        running, detail = self.status
         theme_name = self.config_editor.get("THEME") or "—"
         tiles = [
             ("Pantalla", "ENCENDIDA" if running else "APAGADA", detail, C["ok"] if running else C["danger"],
