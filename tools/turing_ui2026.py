@@ -455,7 +455,7 @@ class App(tk.Tk):
                                          "BRIGHTNESS": (brightness, "display")})
             ok, message = self.platform.restart()
             if ok:
-                return True, f"{theme.name} aplicado y monitor reiniciado"
+                return True, f"{theme.name} aplicado y monitor reiniciado{self._aviso_medida(theme)}"
             # Si no arranca, se deja la configuracion como estaba: mejor volver al
             # tema anterior que dejar la pantalla apagada por un tema que falla.
             if anterior["THEME"]:
@@ -538,6 +538,20 @@ class App(tk.Tk):
                                               f"{script.name} finalizado"))
         else:
             self.notify("Acción no disponible", error=True)
+
+    def _aviso_medida(self, theme: ThemeInfo) -> str:
+        """Avisa si el tema es de otra medida que la pantalla configurada.
+
+        Pasa a menudo: en la lista salen los 140 temas y hay temas de 2.1\" (480x480)
+        o de 8.8\" (1920x480). Se aplican igual, pero conviene saberlo.
+        """
+        revision = (self.config_editor.get("REVISION") or "").strip().upper()
+        medida = {"A": "3.5", "B": "3.5", "D": "3.5", "WEACT_A": "3.5",
+                  "WEACT_B": "0.96"}.get(revision, "")
+        tamano_tema = (theme.size or "").strip().strip('"')
+        if medida and tamano_tema and tamano_tema != medida:
+            return f" — ojo: es de {tamano_tema}\" y tu pantalla es {medida}\", puede verse mal"
+        return ""
 
     def act_script(self, label: str, script: Path, shell: list[str]) -> None:
         """Ejecuta un script con su intérprete (nunca lo abre con el editor)."""
