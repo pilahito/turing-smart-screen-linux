@@ -416,7 +416,9 @@ def main(argv: list[str] | None = None) -> int:
             version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         except OSError:
             version = "1.0.0"
-    version = version.replace("-linux-ubuntu", "").replace('"', "").strip() or "1.0.0"
+    # limpieza defensiva: BOM, comillas, espacios y sufijos del proyecto
+    version = version.lstrip("\ufeff").strip().strip('"')
+    version = version.replace("-linux-ubuntu", "").strip() or "1.0.0"
 
     destino = construir(ROOT, (ROOT / args.out).resolve(), version, args.arch,
                         not args.sin_temas, not args.sin_fuentes)
