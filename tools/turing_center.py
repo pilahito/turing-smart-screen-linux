@@ -136,7 +136,11 @@ class ConfigEditor:
 
     # -- lectura -----------------------------------------------------------------
     def text(self) -> str:
-        return self.path.read_text(encoding="utf-8-sig")
+        """Contenido de config.yaml (cadena vacia si todavia no existe)."""
+        try:
+            return self.path.read_text(encoding="utf-8-sig")
+        except OSError:
+            return ""
 
     def get(self, key: str, default: str = "") -> str:
         match = re.search(rf"(?m)^\s*{re.escape(key)}:\s*(.*)$", self.text())
@@ -809,10 +813,12 @@ def print_status() -> int:
     print(f"  Sistema        : {platform.name} ({sys.platform})")
     print(f"  Proyecto       : {ROOT}")
     print(f"  Monitor        : {'ENCENDIDO' if running else 'APAGADO'} ({detail})")
-    print(f"  Tema           : {editor.get('THEME')}")
-    print(f"  Puerto         : {editor.get('COM_PORT')}   Sensores: {editor.get('HW_SENSORS')}   "
-          f"Revisión: {editor.get('REVISION')}")
-    print(f"  Brillo         : {editor.get('BRIGHTNESS')}")
+    if not editor.path.exists():
+        print("  Configuración  : sin config.yaml (se creará al abrir el panel)")
+    print(f"  Tema           : {editor.get('THEME') or '—'}")
+    print(f"  Puerto         : {editor.get('COM_PORT') or 'AUTO'}   "
+          f"Sensores: {editor.get('HW_SENSORS') or 'AUTO'}   Revisión: {editor.get('REVISION') or '—'}")
+    print(f"  Brillo         : {editor.get('BRIGHTNESS') or '—'}")
     print(f"  Puerto serie   : {', '.join(platform.serial_ports()) or 'ninguno'}")
     print(f"  Autostart      : {'sí' if platform.autostart_enabled() else 'no'}")
     print(f"  Registro       : {platform.log_file}")
