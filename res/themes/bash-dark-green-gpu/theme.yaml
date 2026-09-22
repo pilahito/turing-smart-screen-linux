@@ -1,5 +1,6 @@
 ---
 display:
+  DISPLAY_SIZE: 3.5"
   DISPLAY_ORIENTATION: portrait
   DISPLAY_RGB_LED: 30, 255, 50
 

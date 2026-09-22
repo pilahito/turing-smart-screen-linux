@@ -2,6 +2,7 @@
 author: "@mathoudebine"
 
 display:
+  DISPLAY_SIZE: 3.5"
   DISPLAY_ORIENTATION: landscape
   DISPLAY_RGB_LED: 16, 223, 239
 

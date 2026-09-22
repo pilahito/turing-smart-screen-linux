@@ -2,6 +2,7 @@
 author: "@mathoudebine"
 
 display:
+  DISPLAY_SIZE: 3.5"
   DISPLAY_ORIENTATION: portrait
   DISPLAY_RGB_LED: 0, 0, 255
 

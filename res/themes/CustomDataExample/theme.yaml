@@ -4,6 +4,7 @@
 # Names of the custom sensor classes listed here must be an exact match to class names in sensors_custom.py
 ---
 display:
+  DISPLAY_SIZE: 3.5"
   DISPLAY_ORIENTATION: landscape
   DISPLAY_RGB_LED: 61, 184, 225
 
