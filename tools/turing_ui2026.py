@@ -369,10 +369,24 @@ class App(tk.Tk):
         brightness = int(self.brightness * 100)
 
         def task():
+            anterior = {"THEME": self.config_editor.get("THEME"),
+                        "BRIGHTNESS": self.config_editor.get("BRIGHTNESS")}
             self.config_editor.set_many({"THEME": (theme.name, "config"),
                                          "BRIGHTNESS": (brightness, "display")})
             ok, message = self.platform.restart()
-            return ok, f"{theme.name} aplicado y monitor reiniciado" if ok else message
+            if ok:
+                return True, f"{theme.name} aplicado y monitor reiniciado"
+            # Si no arranca, se deja la configuracion como estaba: mejor volver al
+            # tema anterior que dejar la pantalla apagada por un tema que falla.
+            if anterior["THEME"]:
+                self.config_editor.set_many({"THEME": (anterior["THEME"], "config"),
+                                             "BRIGHTNESS": (anterior["BRIGHTNESS"] or 35, "display")},
+                                            backup=False)
+                vuelto, _ = self.platform.restart()
+                aviso = (f"Se ha vuelto a {anterior['THEME']}." if vuelto
+                         else f"Configuracion restaurada a {anterior['THEME']}.")
+                return False, f"No pude aplicar {theme.name}: {message} {aviso}"
+            return False, f"No pude aplicar {theme.name}: {message}"
 
         self.run_bg(f"Aplicando {theme.name}", task)
 

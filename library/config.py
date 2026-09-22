@@ -30,7 +30,7 @@ from library.log import logger
 
 
 def load_yaml(configfile):
-    with open(configfile, "rt", encoding='utf8') as stream:
+    with open(configfile, "rt", encoding='utf-8-sig') as stream:
         yamlconfig = yaml.safe_load(stream)
         return yamlconfig
 
@@ -55,12 +55,17 @@ def copy_default(default, theme):
 def load_theme():
     global THEME_DATA
     try:
-        theme_path = Path("res/themes/" + CONFIG_DATA['config']['THEME'])
-        logger.info("Loading theme %s from %s" % (CONFIG_DATA['config']['THEME'], theme_path / "theme.yaml"))
+        # str(): el nombre del tema puede ser numerico (hay temas llamados 26, 30,
+        # 43, 44, 45). Si el config.yaml no lo entrecomilla, YAML lo lee como entero
+        # y "res/themes/" + 26 fallaba con TypeError -> "Theme not found or contains
+        # errors!" sin decir por que.
+        theme_name = str(CONFIG_DATA['config']['THEME'])
+        theme_path = Path("res/themes/" + theme_name)
+        logger.info("Loading theme %s from %s" % (theme_name, theme_path / "theme.yaml"))
         THEME_DATA = load_yaml(MAIN_DIRECTORY / theme_path / "theme.yaml")
         THEME_DATA['PATH'] = str(MAIN_DIRECTORY / theme_path) + "/"
-    except:
-        logger.error("Theme not found or contains errors!")
+    except Exception as error:
+        logger.error(f"Theme not found or contains errors! ({type(error).__name__}: {error})")
         try:
             sys.exit(0)
         except:
@@ -69,9 +74,29 @@ def load_theme():
     copy_default(THEME_DEFAULT, THEME_DATA)
 
 
+def _norm_size(value) -> str:
+    """'3.5', '3.5\"', 3.5 → 3.5  (evita que las skins horizontales fallen por comillas)."""
+    s = str(value or "").strip().replace('"', "").replace("'", "").replace(" ", "")
+    if s.endswith("inch"):
+        s = s[:-4]
+    return s
+
+
 def check_theme_compatible(display_size: str):
-    # Check if theme is compatible with hardware revision
-    if display_size != THEME_DATA['display'].get("DISPLAY_SIZE", '3.5"'):
+    theme_size = _norm_size(THEME_DATA.get("display", {}).get("DISPLAY_SIZE", "3.5\""))
+    hw_size = _norm_size(display_size)
+    # En 3.5" landscape, permitir temas 3.5 y los que no declaran tamaño (default 3.5).
+    if theme_size and hw_size and theme_size != hw_size:
+        orient = str(THEME_DATA.get("display", {}).get("DISPLAY_ORIENTATION", "")).lower()
+        bg = THEME_DATA.get("static_images", {}).get("BACKGROUND", {})
+        w, h = int(bg.get("WIDTH") or 0), int(bg.get("HEIGHT") or 0)
+        landscape_35 = orient == "landscape" and hw_size == "3.5" and w == 480 and h == 320
+        if landscape_35:
+            logger.warning(
+                "Tema %s declara DISPLAY_SIZE %s pero el fondo es 480x320: se usa en la 3.5\" horizontal.",
+                CONFIG_DATA["config"]["THEME"], theme_size,
+            )
+            return
         logger.error("The selected theme " + CONFIG_DATA['config'][
             'THEME'] + " is not compatible with your display revision " + CONFIG_DATA["display"]["REVISION"])
         try:

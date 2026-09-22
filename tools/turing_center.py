@@ -201,6 +201,14 @@ class ConfigEditor:
     # -- internos ----------------------------------------------------------------
     @staticmethod
     def _render(value) -> str:
+        """Representa un valor tal y como debe escribirse en el YAML.
+
+        Las cadenas se entrecomillan cuando YAML las leeria como otro tipo. Sin
+        esto, un tema llamado "26" se escribia como `THEME: 26`, YAML lo leia como
+        numero y la libreria moria con "Theme not found or contains errors!" al
+        intentar `"res/themes/" + 26`. Hay 5 temas con nombre numerico (26, 30, 43,
+        44, 45), asi que no es un caso raro.
+        """
         if isinstance(value, bool):
             return "true" if value else "false"
         if isinstance(value, (int, float)):
@@ -208,10 +216,27 @@ class ConfigEditor:
         text = str(value)
         if text == "":
             return ""
-        # Las cadenas con caracteres especiales se entrecomillan
-        if re.search(r"[:#\[\]{},&*?|>!%@`\"']", text) or text != text.strip():
-            return '"' + text.replace('"', '\\"') + '"'
-        return text
+        try:
+            import yaml
+
+            escrito = yaml.safe_dump(text, default_flow_style=True, width=10 ** 6,
+                                     allow_unicode=True).strip()
+            if escrito.endswith("..."):
+                escrito = escrito[:-3].strip()
+            # safe_dump puede devolver varias lineas (bloques): se pasa a una sola
+            if "\n" in escrito or not escrito:
+                raise ValueError("multilinea")
+            return escrito
+        except Exception:
+            # Reserva: entrecomillar a mano si YAML no esta disponible
+            if re.search(r"[:#\[\]{},&*?|>!%@`\"']", text) or text != text.strip() \
+                    or "\n" in text or "\r" in text or "\t" in text \
+                    or re.fullmatch(r"[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?", text) \
+                    or text.lower() in ("true", "false", "yes", "no", "on", "off", "null", "~"):
+                escapado = (text.replace('\\', '\\\\').replace('"', '\\"')
+                            .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t"))
+                return '"' + escapado + '"'
+            return text
 
     @staticmethod
     def _insert_in_section(text: str, section: str, key: str, rendered: str) -> str:
@@ -300,14 +325,24 @@ class Platform:
         except (OSError, ValueError):
             pid = 0
         if pid > 0 and self._pid_alive(pid):
+            # Aunque el PID propio este vivo, puede haber otra copia del monitor
+            # abierta (es la que suele tener cogido el puerto serie): se avisa.
+            otros = [descripcion for otro, descripcion in self.monitor_processes() if otro != pid]
+            if otros:
+                return True, f"PID {pid} y {len(otros)} monitor(es) mas: {', '.join(otros[:2])}"
             return True, f"PID {pid}"
         if IS_LINUX:
             active = self._run(["systemctl", "--user", "is-active", "turing-smart-screen.service"])
             if active.strip() == "active":
                 return True, "systemd: activo"
-        found = self._find_monitor_process()
-        if found:
-            return True, f"PID {found}"
+        encontrados = self.monitor_processes()
+        if encontrados:
+            detalle = ", ".join(descripcion for _, descripcion in encontrados[:3])
+            if len(encontrados) > 3:
+                detalle += f" y {len(encontrados) - 3} mas"
+            if len(encontrados) > 1:
+                detalle += " — hay varios monitores abiertos, usa Detener"
+            return True, detalle
         return False, "detenido"
 
     def _pid_alive(self, pid: int) -> bool:
@@ -329,19 +364,84 @@ class Platform:
             return False
 
     def _find_monitor_process(self) -> int:
+        encontrados = self.monitor_processes()
+        return encontrados[0][0] if encontrados else 0
+
+    def monitor_processes(self) -> list[tuple[int, str]]:
+        """(pid, descripcion) de TODOS los procesos que estan ejecutando main.py.
+
+        No basta con el fichero monitor.pid: en este equipo habia ademas un monitor
+        de una copia antigua (E:\\centro-turing) y otro lanzado con el Python del
+        sistema. Son los que de verdad tienen cogido el puerto serie, y por eso el
+        monitor recien arrancado moria con "PermissionError: Acceso denegado".
+        """
+        encontrados: list[tuple[int, str]] = []
+        raiz = str(ROOT).replace("\\", "/").lower()
         try:
             import psutil  # type: ignore
 
             for proc in psutil.process_iter(["pid", "name", "cmdline"]):
                 try:
-                    cmdline = " ".join(proc.info.get("cmdline") or [])
+                    info = proc.info
+                    cmdline = " ".join(info.get("cmdline") or [])
+                    if "main.py" not in cmdline:
+                        continue
+                    if "python" not in (info.get("name") or "").lower():
+                        continue
+                    try:
+                        carpeta = str(proc.cwd())
+                    except Exception:
+                        carpeta = ""
+                    pistas = f"{cmdline} {carpeta}".replace("\\", "/").lower()
+                    if raiz not in pistas and "turing" not in pistas:
+                        continue  # otro programa cualquiera que tambien tenga main.py
+                    descripcion = f"PID {info['pid']}"
+                    if raiz not in pistas:
+                        descripcion += " (copia antigua del programa)"
+                    encontrados.append((int(info["pid"]), descripcion))
                 except Exception:
                     continue
-                if "main.py" in cmdline and str(ROOT).replace("\\", "/") in cmdline.replace("\\", "/"):
-                    return int(proc.info["pid"])
         except Exception:
-            return 0
-        return 0
+            pid = 0
+            try:
+                import psutil  # noqa: F401
+            except Exception:
+                pass
+            if pid:
+                encontrados.append((pid, f"PID {pid}"))
+        return encontrados
+
+    def _config_port(self) -> str:
+        """Puerto serie configurado (o AUTO)."""
+        try:
+            return (ConfigEditor().get("COM_PORT") or "").upper()
+        except Exception:
+            return ""
+
+    def wait_monitors_gone(self, timeout: float = 15.0) -> bool:
+        """Espera a que no quede ningun proceso de monitor.
+
+        No se abre el puerto para comprobarlo: abrirlo activa DTR y podria reiniciar
+        la pantalla. Mirar los procesos es suficiente y no toca el hardware.
+        """
+        final = time.time() + timeout
+        while time.time() < final:
+            if not self.monitor_processes():
+                time.sleep(1.0)  # margen para que el sistema suelte el puerto
+                return True
+            time.sleep(0.5)
+        return not self.monitor_processes()
+
+    def port_error_in_log(self) -> str:
+        """Mira el final del registro: si el monitor no pudo abrir el puerto, lo dice."""
+        try:
+            lineas = self.log_file.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+        except OSError:
+            return ""
+        for linea in reversed(lineas):
+            if "Cannot open COM port" in linea or "could not open port" in linea:
+                return linea.split("]", 1)[-1].strip()
+        return ""
 
     # -- arranque y parada -------------------------------------------------------
     def start(self, detached: bool = True) -> tuple[bool, str]:
@@ -380,6 +480,12 @@ class Platform:
         self.pid_file.write_text(str(proc.pid), encoding="utf-8")
         time.sleep(2.0)
         if proc.poll() is not None:
+            # Si no pudo abrir el puerto, se dice tal cual en vez de "se cerro"
+            fallo_puerto = self.port_error_in_log()
+            if fallo_puerto:
+                return False, (f"El monitor no pudo abrir el puerto: {fallo_puerto} "
+                               "Suele ser otra copia del monitor (o un terminal serie) usandolo. "
+                               "Pulsa Detener y vuelve a intentarlo.")
             return False, "El monitor se cerro al arrancar. Revisa el registro."
         return True, f"Monitor iniciado (PID {proc.pid})"
 
@@ -424,9 +530,9 @@ class Platform:
                     blocked = True
             else:
                 messages.append(f"PID {pid} ignorado (ya no es el monitor)")
-        for found in filter(None, [self._find_monitor_process()]):
+        for found, descripcion in self.monitor_processes():
             if self._kill(found):
-                messages.append(f"PID {found} detenido")
+                messages.append(f"{descripcion} detenido")
             else:
                 blocked = True
         if blocked:
@@ -445,7 +551,14 @@ class Platform:
         ok, message = self.stop()
         if not ok:
             return False, message  # no se puede reiniciar lo que no se puede cerrar
-        time.sleep(0.6)
+        # El monitor anterior tarda un momento en soltar el puerto: sin esta espera,
+        # el nuevo moria con "PermissionError: Acceso denegado" y la pantalla se
+        # quedaba apagada sin saber por que.
+        if not self.wait_monitors_gone():
+            otros = self.monitor_processes()
+            detalle = f" ({', '.join(d for _, d in otros)})" if otros else ""
+            return False, (f"Queda otro monitor abierto{detalle} y tiene cogido el puerto. "
+                           "Cierralo desde el Administrador de tareas y vuelve a intentarlo.")
         return self.start()
 
     def _kill(self, pid: int) -> bool:
