@@ -338,8 +338,32 @@ class Platform:
             return False, "El monitor se cerro al arrancar. Revisa el registro."
         return True, f"Monitor iniciado (PID {proc.pid})"
 
+    def is_our_monitor(self, pid: int) -> bool:
+        """Comprueba que un PID es de verdad nuestro monitor antes de matarlo.
+
+        Windows reutiliza los PID: si el monitor murio y su numero se reasigno a
+        otro programa, matarlo por PID cerraria un proceso ajeno. Por eso se mira
+        el nombre del ejecutable y la linea de comandos.
+        """
+        if pid <= 0:
+            return False
+        try:
+            import psutil  # type: ignore
+
+            proc = psutil.Process(pid)
+            cmdline = " ".join(proc.cmdline() or []).replace("\\", "/")
+            name = (proc.name() or "").lower()
+        except Exception:
+            return False
+        if "python" not in name:
+            return False
+        if "main.py" not in cmdline:
+            return False
+        return str(ROOT).replace("\\", "/") in cmdline
+
     def stop(self) -> tuple[bool, str]:
         messages = []
+        blocked = False
         if IS_LINUX and self._systemd_available("turing-smart-screen.service"):
             if self._run_code(["systemctl", "--user", "stop", "turing-smart-screen.service"]) == 0:
                 messages.append("systemd detenido")
@@ -348,11 +372,22 @@ class Platform:
         except (OSError, ValueError):
             pid = 0
         if pid > 0:
-            self._kill(pid)
-            messages.append(f"PID {pid} detenido")
+            if self.is_our_monitor(pid):
+                if self._kill(pid):
+                    messages.append(f"PID {pid} detenido")
+                else:
+                    blocked = True
+            else:
+                messages.append(f"PID {pid} ignorado (ya no es el monitor)")
         for found in filter(None, [self._find_monitor_process()]):
-            self._kill(found)
-            messages.append(f"PID {found} detenido")
+            if self._kill(found):
+                messages.append(f"PID {found} detenido")
+            else:
+                blocked = True
+        if blocked:
+            return False, ("El monitor se esta ejecutando como administrador y no se puede "
+                           "cerrar desde este panel. Cierralo desde el Administrador de tareas "
+                           "(o abre el panel como administrador) y vuelve a intentarlo.")
         if IS_WINDOWS:
             self._run(["taskkill", "/IM", "UsbPCMonitor.exe", "/F"])
         try:
@@ -362,14 +397,17 @@ class Platform:
         return True, ("Monitor detenido: " + ", ".join(messages)) if messages else "No habia monitor activo"
 
     def restart(self) -> tuple[bool, str]:
-        self.stop()
+        ok, message = self.stop()
+        if not ok:
+            return False, message  # no se puede reiniciar lo que no se puede cerrar
         time.sleep(0.6)
         return self.start()
 
-    def _kill(self, pid: int) -> None:
+    def _kill(self, pid: int) -> bool:
+        """Mata el proceso. Devuelve False si no se pudo (p. ej. corre como admin)."""
         try:
             if IS_WINDOWS:
-                self._run(["taskkill", "/PID", str(pid), "/F", "/T"])
+                self._run(["taskkill", "/PID", str(pid), "/F"])
             else:
                 os.kill(pid, 15)
                 time.sleep(0.3)
@@ -378,7 +416,9 @@ class Platform:
                 except OSError:
                     pass
         except Exception:
-            pass
+            return False
+        time.sleep(0.4)
+        return not self._pid_alive(pid)
 
     def _systemd_available(self, unit: str) -> bool:
         if not IS_LINUX or not shutil.which("systemctl"):
@@ -483,18 +523,24 @@ class Platform:
         return "En Linux los sensores los lee Python: instala lm-sensors si faltan datos."
 
     # -- ejecucion de comandos ---------------------------------------------------
-    @staticmethod
-    def _run(args: list[str], timeout: int = 20) -> str:
+    # CREATE_NO_WINDOW: el panel va sin consola, asi que sin esta marca cada
+    # taskkill/tasklist/git abriria una ventana negra durante un instante.
+    _NO_WINDOW = 0x08000000 if IS_WINDOWS else 0
+
+    @classmethod
+    def _run(cls, args: list[str], timeout: int = 20) -> str:
         try:
-            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout, errors="replace")
+            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout,
+                                  errors="replace", creationflags=cls._NO_WINDOW)
             return (done.stdout or "") + (done.stderr or "")
         except Exception:
             return ""
 
-    @staticmethod
-    def _run_code(args: list[str], timeout: int = 30) -> int:
+    @classmethod
+    def _run_code(cls, args: list[str], timeout: int = 30) -> int:
         try:
-            return subprocess.run(args, capture_output=True, timeout=timeout).returncode
+            return subprocess.run(args, capture_output=True, timeout=timeout,
+                                  creationflags=cls._NO_WINDOW).returncode
         except Exception:
             return 1
 

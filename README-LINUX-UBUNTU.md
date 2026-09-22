@@ -65,6 +65,22 @@ interruptores animados; deslizador de brillo arrastrable y transiciones deslizan
 Todo se renderiza con Pillow (`tools/turing_design.py`), así que las imágenes de `--mockup` son
 exactamente el mismo diseño que se ve en la aplicación.
 
+![Centro Turing](res/docs/centro-turing-banner.png)
+
+### Icono del proyecto
+
+`res/icons/centro-turing.ico` (multirresolución 16→256) y `centro-turing.png` se generan con el
+mismo motor de dibujo:
+
+```bash
+python -c "import sys; sys.path.insert(0,'tools'); import turing_design as d; from pathlib import Path; \
+d.save_app_icon(Path('res/icons/centro-turing.ico'), Path('res/icons/centro-turing.png')); \
+d.social_banner(Path('res/docs/centro-turing-banner.png'))"
+```
+
+- El panel lo usa como icono de ventana y de barra de tareas automáticamente.
+- `res/docs/centro-turing-banner.png` (1280x640) sirve para **GitHub → Settings → Social preview**.
+
 También está en el menú de texto (opción **g**) y, tras `install-desktop-menu.sh`,
 como acceso directo **Centro Turing** en el Escritorio y en el menú de aplicaciones.
 

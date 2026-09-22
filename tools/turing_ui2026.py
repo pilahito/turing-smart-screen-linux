@@ -119,6 +119,7 @@ class App(tk.Tk):
         self.title(f"{APP_NAME} {VERSION} — panel de la mini pantalla USB")
         self.configure(bg=C["bg"])
         self.minsize(self.MIN_WIDTH, self.MIN_HEIGHT)
+        self._apply_window_icon()
         self._apply_geometry()
         self.canvas = tk.Canvas(self, bg=C["bg"], highlightthickness=0, bd=0, cursor="arrow")
         self.canvas.pack(fill="both", expand=True)
@@ -145,6 +146,20 @@ class App(tk.Tk):
     @staticmethod
     def _font_family() -> str:
         return "Segoe UI" if D._WINDOWS else "DejaVu Sans"
+
+    def _apply_window_icon(self) -> None:
+        """Icono propio del proyecto en la ventana y en la barra de tareas."""
+        icon_png = core.ROOT / "res" / "icons" / "centro-turing.png"
+        icon_ico = core.ROOT / "res" / "icons" / "centro-turing.ico"
+        try:
+            if not icon_png.exists():
+                D.save_app_icon(icon_ico, icon_png)
+            self._icon_photo = ImageTk.PhotoImage(Image.open(icon_png))
+            self.iconphoto(True, self._icon_photo)
+            if D._WINDOWS and icon_ico.exists():
+                self.iconbitmap(str(icon_ico))
+        except Exception:
+            pass  # el icono es cosmetico: nunca debe impedir abrir el panel
 
     def _brightness(self) -> float:
         try:
@@ -564,38 +579,42 @@ class App(tk.Tk):
 
         preview_w = int((width - SP["lg"]) * 0.56)
         control_w = width - preview_w - SP["lg"]
+        card_h = max(320, min(470, height - 190))
         current = next((t for t in self.themes if t.name == theme_name), None)
         preview = self.scene.cached(
-            ("preview", theme_name, preview_w),
+            ("preview", theme_name, preview_w, card_h),
             lambda: D.theme_preview(current.background if current else None, theme_name,
                                     f"{current.resolution if current else '?'} · "
                                     f"{'horizontal' if current and current.is_landscape else 'vertical'} · "
                                     f"medida {current.size if current and current.size else '—'}",
-                                    width=preview_w, height=min(400, height - 190),
+                                    width=preview_w, height=card_h,
                                     badges=[('3.5"' if current and current.size.startswith("3.5") else
                                              (current.size or "medida"), "accent"),
                                             ("horizontal" if current and current.is_landscape else "vertical",
                                              "ok"), (f"{len(self.themes)} temas", "neutral")]))
         self.scene.image(tag, "preview", preview, x, top + 148)
         controls = self.scene.cached(
-            ("controls", theme_name, int(self.brightness * 100), running),
-            lambda: D.control_card(width=control_w, height=min(400, height - 190),
+            ("controls", theme_name, int(self.brightness * 100), running, card_h),
+            lambda: D.control_card(width=control_w, height=card_h,
                                    brightness=self.brightness, theme_name=theme_name, running=running))
         control_x = x + preview_w + SP["lg"]
         self.scene.image(tag, "controls", controls, control_x, top + 148)
-        self._hotspots_panel(tag, control_x, top + 148, control_w, pressed)
+        self._hotspots_panel(tag, control_x, top + 148, control_w, card_h, pressed)
 
         tip = self.scene.cached(("tip",), lambda: D.chip(self.platform.admin_hint(), kind="neutral"))
-        self.scene.image(tag, "tip", tip, x, top + 148 + min(400, height - 190) + SP["lg"])
+        self.scene.image(tag, "tip", tip, x, top + 148 + card_h + SP["lg"])
 
-    def _hotspots_panel(self, tag: str, cx: int, cy: int, control_w: int, pressed: str) -> None:
-        self.scene.hotspot(tag, "btn_on", cx + SP["lg"], cy + 304, 140, 44, self.act_start)
-        self.scene.hotspot(tag, "btn_off", cx + SP["lg"] + 152, cy + 304, 120, 44, self.act_stop)
-        self.scene.hotspot(tag, "btn_restart", cx + SP["lg"] + 284, cy + 304, 140, 44, self.act_restart)
-        self.scene.hotspot(tag, "apply", cx + SP["lg"], cy + 360, control_w - SP["lg"] * 2, 34, self.act_apply)
+    def _hotspots_panel(self, tag: str, cx: int, cy: int, control_w: int, card_h: int,
+                        pressed: str) -> None:
+        buttons_y = cy + card_h - 96
+        self.scene.hotspot(tag, "btn_on", cx + SP["lg"], buttons_y, 140, 44, self.act_start)
+        self.scene.hotspot(tag, "btn_off", cx + SP["lg"] + 152, buttons_y, 120, 44, self.act_stop)
+        self.scene.hotspot(tag, "btn_restart", cx + SP["lg"] + 284, buttons_y, 140, 44, self.act_restart)
+        self.scene.hotspot(tag, "apply", cx + SP["lg"], cy + card_h - 152, control_w - SP["lg"] * 2, 40,
+                           self.act_apply)
         slider_x, slider_w = cx + SP["lg"], control_w - SP["lg"] * 2 - 66
         self._slider_rect = (slider_x, slider_w)
-        self.scene.hotspot(tag, "slider", slider_x, cy + 142, slider_w, 34, lambda: None)
+        self.scene.hotspot(tag, "slider", slider_x, cy + SP["lg"] + 142, slider_w, 34, lambda: None)
 
     def _page_temas(self, x: int, y: int, width: int, height: int, pressed: str) -> None:
         tag = "current_page"

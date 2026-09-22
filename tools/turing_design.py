@@ -538,38 +538,69 @@ def slider(value: float, *, width: int = 300, height: int = 26, color: str = C["
     return image
 
 
+def fit_within(image: Image.Image, box: tuple[int, int]) -> Image.Image:
+    """Escala la imagen completa para que quepa en la caja (contain)."""
+    copy = image.copy()
+    copy.thumbnail(box, Image.LANCZOS)
+    return copy
+
+
+def cover(image: Image.Image, box: tuple[int, int]) -> Image.Image:
+    """Escala y recorta centrado para llenar toda la caja (cover)."""
+    target_w, target_h = box
+    scale = max(target_w / image.width, target_h / image.height)
+    resized = image.resize((max(target_w, round(image.width * scale)),
+                            max(target_h, round(image.height * scale))), Image.LANCZOS)
+    left = (resized.width - target_w) // 2
+    top = (resized.height - target_h) // 2
+    return resized.crop((left, top, left + target_w, top + target_h))
+
+
 def theme_preview(background: Path | None, name: str, detail: str, *, width: int = 560, height: int = 400,
                   badges: list[tuple[str, str]] | None = None) -> Image.Image:
-    """Tarjeta grande con el fondo del tema y sus datos."""
+    """Tarjeta de vista previa del tema.
+
+    La foto llena todo el area disponible: detras va la misma imagen ampliada y
+    desenfocada (cover) y encima la imagen nitida completa (contain). Asi ninguna
+    medida deja huecos: 480x320 horizontal, 320x480 vertical, 5", 8.8"...
+    """
+    caption_h = 118
+    inner_w = max(80, width - SP["lg"] * 2)
+    box_h = max(120, height - caption_h - SP["lg"])
     image = glass((width, height), radius=R["card"], shadow=14)
-    inner_w = width - SP["lg"] * 2
-    box_h = height - 132
+    area = Image.new("RGBA", (inner_w, box_h), rgba(C["bg_soft"]))
+
+    shot = None
     if background and Path(background).exists():
         try:
             with Image.open(background) as source:
                 shot = source.convert("RGB")
-                shot.thumbnail((inner_w, box_h), Image.LANCZOS)
-                shot = shot.convert("RGBA")
-                mask = rounded_mask(shot.size, 14)
-                shot.putalpha(mask)
-                frame = surface((shot.width, shot.height), radius=14, fill=C["bg_soft"],
-                                border=C["border_hi"], highlight=False)
-                frame.alpha_composite(shot, (0, 0))
-                image.alpha_composite(frame, ((width - shot.width) // 2, SP["lg"]))
         except Exception:
-            background = None
-    if not background or not Path(background).exists():
-        placeholder = surface((inner_w, box_h), radius=14, fill=C["bg_soft"], border=C["border"])
-        draw_text(placeholder, (inner_w // 2, box_h // 2), "sin vista previa", size=T["small"],
-                  color=C["faint"], anchor="mm")
-        image.alpha_composite(placeholder, (SP["lg"], SP["lg"]))
+            shot = None
 
-    draw_text(image, (SP["lg"], height - 96), name, size=T["h1"], weight="bold", color=C["text"])
-    draw_text(image, (SP["lg"] + 1, height - 68), detail, size=T["small"], color=C["muted"])
+    if shot is not None:
+        backdrop = cover(shot, (inner_w, box_h)).filter(ImageFilter.GaussianBlur(22))
+        backdrop = Image.blend(backdrop, Image.new("RGB", backdrop.size, rgb(C["bg_soft"])), 0.42)
+        backdrop = backdrop.convert("RGBA")
+        area.alpha_composite(backdrop)
+        sharp = fit_within(shot, (inner_w - 10, box_h - 10)).convert("RGBA")
+        sharp.putalpha(rounded_mask(sharp.size, 8))
+        area.alpha_composite(sharp, ((inner_w - sharp.width) // 2, (box_h - sharp.height) // 2))
+    else:
+        draw_text(area, (inner_w // 2, box_h // 2), "sin vista previa", size=T["small"],
+                  color=C["faint"], anchor="mm")
+
+    area.putalpha(rounded_mask((inner_w, box_h), 14))
+    ImageDraw.Draw(area).rounded_rectangle([(0, 0), (inner_w - 1, box_h - 1)], radius=14,
+                                           outline=rgba(C["border_hi"]), width=1)
+    image.alpha_composite(area, (SP["lg"], SP["lg"]))
+
+    draw_text(image, (SP["lg"], height - 92), name, size=T["h1"], weight="bold", color=C["text"])
+    draw_text(image, (SP["lg"] + 1, height - 62), detail, size=T["small"], color=C["muted"])
     x = SP["lg"]
     for text, kind in (badges or []):
         badge = chip(text, kind=kind)
-        image.alpha_composite(badge, (x, height - 44))
+        image.alpha_composite(badge, (x, height - 42))
         x += badge.width + SP["sm"]
     return image
 
@@ -595,6 +626,9 @@ def control_card(*, width: int = 470, height: int = 400, brightness: float = 0.3
     image.alpha_composite(button("Apagar", kind="danger", width=120, height=44), (SP["lg"] + 152, y))
     image.alpha_composite(button("Reiniciar", kind="secondary", width=140, height=44),
                           (SP["lg"] + 284, y))
+    image.alpha_composite(button("Aplicar tema y brillo", kind="secondary",
+                                 width=max(120, width - SP["lg"] * 2), height=40),
+                          (SP["lg"], height - 152))
     return image
 
 
@@ -692,6 +726,55 @@ def log_view(lines: list[str], *, width: int = 900, height: int = 460) -> Image.
         draw.text((SP["lg"], y), raw[:150], font=font(T["small"], "mono"), fill=rgba(color))
         y += line_height
     return image
+
+
+def app_icon(size: int = 256) -> Image.Image:
+    """Icono de la aplicacion: marca del proyecto sobre cuadrado redondeado."""
+    return brand_mark(size)
+
+
+def save_app_icon(ico_path: Path, png_path: Path | None = None, size: int = 256) -> list[Path]:
+    """Guarda el icono como .ico multiresolucion (y opcionalmente .png)."""
+    written: list[Path] = []
+    icon = app_icon(size)
+    ico_path.parent.mkdir(parents=True, exist_ok=True)
+    icon.save(ico_path, format="ICO", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64),
+                                             (128, 128), (256, 256)])
+    written.append(ico_path)
+    if png_path:
+        png_path.parent.mkdir(parents=True, exist_ok=True)
+        icon.save(png_path, format="PNG")
+        written.append(png_path)
+    return written
+
+
+def social_banner(path: Path, *, width: int = 1280, height: int = 640) -> Path:
+    """Imagen de presentacion del repositorio (GitHub > Social preview)."""
+    image = Image.new("RGBA", (width, height), rgba(C["bg"]))
+    image.alpha_composite(gradient_image((width, height), mix(C["bg"], C["accent_2"], 0.16),
+                                         mix(C["bg"], C["accent"], 0.06), diagonal=True).convert("RGBA"))
+    for color, center, radius in ((C["accent"], (width * 0.22, height * 0.15), width * 0.42),
+                                  (C["accent_2"], (width * 0.82, height * 0.85), width * 0.38)):
+        glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        ImageDraw.Draw(glow).ellipse([(center[0] - radius, center[1] - radius),
+                                      (center[0] + radius, center[1] + radius)], fill=rgba(color, 60))
+        image = Image.alpha_composite(image, glow.filter(ImageFilter.GaussianBlur(radius * 0.5)))
+
+    image.alpha_composite(brand_mark(112), (96, 150))
+    draw_text(image, (96, 300), "Centro Turing 3.0", size=64, weight="bold", color=C["text"])
+    draw_text(image, (100, 384), "Panel unificado para pantallas Turing / XuanFang",
+              size=30, weight="regular", color=C["muted"])
+    draw_text(image, (100, 424), "La misma interfaz en Windows y Linux · GPL-3.0 · gratis",
+              size=24, weight="regular", color=C["faint"])
+    x = 100
+    for label, kind in (("Windows", "accent"), ("Linux", "ok"), ("140 temas", "neutral"),
+                        ("Sin candados", "warn")):
+        badge = chip(label, kind=kind, height=40, padding=20)
+        image.alpha_composite(badge, (x, 496))
+        x += badge.width + 14
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.convert("RGB").save(path, "PNG")
+    return path
 
 
 # --------------------------------------------------------------------------------------
