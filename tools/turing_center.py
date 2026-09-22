@@ -45,7 +45,31 @@ VERSION = "3.0.0"
 REPO_URL = "https://github.com/pilahito/turing-smart-screen-linux"
 UPSTREAM_URL = "https://github.com/mathoudebine/turing-smart-screen-python"
 
-ROOT = Path(__file__).resolve().parents[1]
+
+def _resolve_root() -> Path:
+    """Carpeta del proyecto, tambien cuando la app va empaquetada (.exe /.deb).
+
+    Empaquetada con PyInstaller, `__file__` apunta a la carpeta temporal de
+    extraccion, asi que hay que buscar el proyecto junto al ejecutable.
+    """
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        candidates = [
+            exe_dir,
+            exe_dir.parent,
+            Path("/opt/centro-turing"),
+            Path("/usr/share/centro-turing"),
+            Path("E:/turing-smart-screen-python"),
+            Path.home() / "turing-smart-screen-python",
+        ]
+        for candidate in candidates:
+            if (candidate / "main.py").exists():
+                return candidate
+        return exe_dir
+    return Path(__file__).resolve().parents[1]
+
+
+ROOT = _resolve_root()
 CONFIG_FILE = ROOT / "config.yaml"
 THEMES_DIR = ROOT / "res" / "themes"
 STATE_FILE = ROOT / "tmp" / "centro-ui.json"
@@ -92,6 +116,23 @@ class ConfigEditor:
 
     def __init__(self, path: Path = CONFIG_FILE):
         self.path = Path(path)
+        self.ensure_exists()
+
+    def ensure_exists(self) -> bool:
+        """Crea config.yaml desde config.example.yaml si no existe (paquete nuevo)."""
+        if self.path.exists():
+            return False
+        ejemplo = self.path.with_name("config.example.yaml")
+        if not ejemplo.exists():
+            ejemplo = self.path.parent / "res" / "config.example.yaml"
+        if not ejemplo.exists():
+            return False
+        try:
+            shutil.copy2(ejemplo, self.path)
+            log_line(f"config.yaml creado a partir de {ejemplo.name}")
+            return True
+        except OSError:
+            return False
 
     # -- lectura -----------------------------------------------------------------
     def text(self) -> str:

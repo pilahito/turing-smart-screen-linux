@@ -961,15 +961,31 @@ def render_mockups(directory: Path) -> list[Path]:
     return D.save_mockups(Path(directory), state)
 
 
+def prepare_windows_app_identity(app_id: str = "pilahito.CentroTuring.3") -> None:
+    """Windows: identidad propia para la barra de tareas y el icono.
+
+    Sin esto, Windows agrupa la ventana bajo `pythonw.exe` y muestra el icono de
+    Python en lugar del icono del proyecto. Debe llamarse ANTES de crear ventanas.
+    """
+    if not D._WINDOWS:
+        return
+    try:
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    except Exception:
+        pass
+    try:
+        import ctypes
+
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        pass
+
+
 def selftest() -> int:
     """Construye la interfaz, recorre las páginas y comprueba el layout."""
-    if D.os.name == "nt":
-        try:
-            import ctypes
-
-            ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        except Exception:
-            pass
+    prepare_windows_app_identity()
     app = App()
     app.update_idletasks()
     app.update()
@@ -1005,6 +1021,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.selftest:
         return selftest()
+    prepare_windows_app_identity()
     app = App()
     app.mainloop()
     return 0

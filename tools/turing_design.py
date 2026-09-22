@@ -17,7 +17,16 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-ROOT = Path(__file__).resolve().parents[1]
+
+def _base_dir() -> Path:
+    """Carpeta base de recursos, tambien cuando la app va empaquetada (.exe)."""
+    packaged = getattr(sys, "_MEIPASS", None)  # carpeta temporal de PyInstaller
+    if packaged:
+        return Path(packaged)
+    return Path(__file__).resolve().parents[1]
+
+
+ROOT = _base_dir()
 
 # --------------------------------------------------------------------------------------
 # Tokens
