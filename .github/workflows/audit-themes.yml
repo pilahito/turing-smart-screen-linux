@@ -1,0 +1,32 @@
+name: Audit themes
+
+# Comprueba dos cosas de cada tema, en cada push y en cada propuesta de cambio:
+#   * resolucion: el theme.yaml debe declarar la medida y orientacion reales del fondo
+#   * desbordamiento: el texto (valor + unidad) debe caber en su caja WIDTH x HEIGHT
+# Si algo falla, el trabajo se pone en rojo con el detalle (tema, elemento y pixeles).
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Resolucion y desbordamiento de texto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: python -m pip install --upgrade pip pyyaml "pillow>=10"
+
+      - name: Resolucion de los temas
+        run: python tools/audit-theme-resolution.py
+
+      - name: Desbordamiento de texto en las cajas
+        run: python tools/audit-theme-overflow.py

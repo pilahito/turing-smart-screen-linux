@@ -65,7 +65,9 @@ STATS:
         SHOW_UNIT: True
         X: 1460
         Y: 140
-        WIDTH: 400
+        # 444 para que quepa "100°C" con la fuente GeForce Bold 180 (mide 436 px;
+        # con 400 se salia 36 px). Detectado con tools/audit-theme-overflow.py
+        WIDTH: 444
         HEIGHT: 150
         ANCHOR: lm
         FONT: geforce/GeForce-Bold.ttf
