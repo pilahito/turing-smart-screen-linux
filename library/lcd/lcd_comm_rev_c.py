@@ -83,6 +83,7 @@ class Command(Enum):
     START_DISPLAY_BITMAP = bytearray((0x2c,))
     PRE_UPDATE_BITMAP = bytearray((0x86, 0xef, 0x69, 0x00, 0x00, 0x00, 0x01))
     UPDATE_BITMAP = bytearray((0xcc, 0xef, 0x69, 0x00))
+    DISPLAY_BITMAP = bytearray((0xc8, 0xef, 0x69, 0x00))  # generico (sub-revision desconocida)
     DISPLAY_BITMAP_2INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x0E, 0x10))
     DISPLAY_BITMAP_5INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x17, 0x70))
     DISPLAY_BITMAP_8INCH = bytearray((0xc8, 0xef, 0x69, 0x00)) + bytearray((0x38, 0x40))
@@ -130,6 +131,11 @@ class LcdCommRevC(LcdComm):
                  update_queue: Optional[queue.Queue] = None):
         logger.debug("HW revision: C")
         LcdComm.__init__(self, com_port, display_width, display_height, update_queue)
+        # Valores por defecto: _hello() los rellena al inicializar la pantalla, pero
+        # se usan en DisplayPILImage(). Sin esto, cualquier uso antes de InitializeComm()
+        # (o una subclase/mock que no lo llame) falla con AttributeError.
+        self.sub_revision = SubRevision.UNKNOWN
+        self.rom_version = 87
         self.openSerial()
 
     def __del__(self):
@@ -349,16 +355,25 @@ class LcdCommRevC(LcdComm):
                 self._send_command(Command.PRE_UPDATE_BITMAP)
                 self._send_command(Command.START_DISPLAY_BITMAP, padding=Padding.START_DISPLAY_BITMAP)
 
+                # Comando generico (sin sufijo de medida): es el que se usaba antes de
+                # soportar sub-revisiones y el que corresponde cuando aun no se ha
+                # detectado el modelo (SubRevision.UNKNOWN).
                 if self.sub_revision == SubRevision.REV_5INCH:
                     display_bmp_cmd = Command.DISPLAY_BITMAP_5INCH
                 elif self.sub_revision == SubRevision.REV_2INCH:
                     display_bmp_cmd = Command.DISPLAY_BITMAP_2INCH
                 elif self.sub_revision == SubRevision.REV_8INCH:
                     display_bmp_cmd = Command.DISPLAY_BITMAP_8INCH
+                else:
+                    display_bmp_cmd = Command.DISPLAY_BITMAP
 
+                # Tamano del bitmap en palabras de 64 bytes: ancho x ALTO (no ancho^2).
+                # Con ancho^2 salia 3600 para la 3.5"/5" (480x800) cuando corresponde
+                # 6000 (0x1770), que es justo el valor que llevan las constantes por
+                # modelo y el de los ficheros golden del proyecto.
                 self._send_command(display_bmp_cmd,
                                    payload=bytearray(
-                                       int(self.display_width * self.display_width / 64).to_bytes(2, "big")))
+                                       int(self.display_width * self.display_height / 64).to_bytes(2, "big")))
                 self._send_command(Command.SEND_PAYLOAD,
                                    payload=bytearray(self._generate_full_image(image)),
                                    readsize=1024)

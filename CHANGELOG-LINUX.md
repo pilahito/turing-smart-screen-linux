@@ -1,5 +1,41 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.8-linux-ubuntu] - 2026-09-22
+
+Versión **estable**: paquetes instalables, correcciones de librería y la suite de
+pruebas del proyecto en verde.
+
+### Paquetes instalables
+- **Windows**: `Centro-Turing-3.1.exe` (PyInstaller, un solo fichero, sin consola) con
+  el icono del proyecto incrustado. Se acabó el icono de Python: se fija la identidad
+  de la aplicación (`SetCurrentProcessExplicitAppUserModelID`) y el ejecutable lleva
+  `res/icons/centro-turing.ico`.
+- **Ubuntu/Debian**: `centro-turing_1.0.8_all.deb` (57 MB, 75 temas). Instala en
+  `/opt/centro-turing`, los comandos `centro-turing` y `turing-menu`, la entrada del
+  menú y el icono. Se construye con `tools/build_deb.py` (sin necesitar `dpkg-deb`) y
+  el CI lo **instala de prueba** en cada release.
+- El `.deb` no incluye `config.yaml` (configuración personal): la aplicación lo crea
+  desde `config.example.yaml` la primera vez que se abre.
+- `--mockup CARPETA` genera las imágenes de la interfaz sin abrir la ventana.
+
+### Corregido (librería)
+- **Rev. C — tamaño del bitmap**: se enviaba `ancho²/64` en vez de `ancho×alto/64`.
+  Para una 3.5"/5" (480x800) mandaba 3600 en lugar de 6000 (0x1770), que es el valor
+  que llevan las constantes por modelo (`DISPLAY_BITMAP_5INCH`) y los ficheros golden.
+- **Rev. C — arranque**: `sub_revision` y `rom_version` solo se creaban en
+  `InitializeComm()`, así que cualquier uso previo fallaba con `AttributeError`.
+  Ahora tienen valor por defecto en el constructor y existe el comando genérico
+  `DISPLAY_BITMAP` para cuando aún no se ha detectado el modelo.
+- **Ficheros golden de rev. C** actualizados: estaban grabados de cuando la inversión
+  se hacía por hardware (comando `OPTIONS` + `FLIP_180`), rama que está desactivada en
+  el propio proyecto porque la inversión se hace rotando la imagen por software.
+- **Suite de pruebas: 37 pasan, 0 fallan** (antes 29 pasaban y 8 fallaban).
+
+### Corregido (panel)
+- Se comprobaba el PID de `monitor.pid` sin verificar de quién era antes de matarlo
+  (Windows recicla PID) y podía cerrar un proceso ajeno.
+- Si el monitor corría como administrador, el panel informaba de "detenido" sin serlo.
+
 ## [1.0.7-linux-ubuntu] - 2026-09-22
 
 ### Nuevo

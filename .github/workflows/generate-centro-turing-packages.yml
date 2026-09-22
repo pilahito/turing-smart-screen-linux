@@ -94,7 +94,7 @@ jobs:
         shell: pwsh
         run: |
           Add-Type -AssemblyName System.Drawing
-          $ico = [System.Drawing.Icon]::ExtractAssociatedIcon("dist/Centro-Turing-3.0.exe")
+          $ico = [System.Drawing.Icon]::ExtractAssociatedIcon("dist/Centro-Turing-3.1.exe")
           $bmp = $ico.ToBitmap()
           $cyan = 0
           for ($x = 0; $x -lt $bmp.Width; $x++) {
@@ -109,9 +109,9 @@ jobs:
       - name: Arrancar el .exe y comprobar que se mantiene vivo
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "dist/Centro-Turing-3.0.exe" -PassThru
+          $p = Start-Process -FilePath "dist/Centro-Turing-3.1.exe" -PassThru
           Start-Sleep -Seconds 12
-          $vivos = @(Get-Process -Name 'Centro-Turing-3.0' -ErrorAction SilentlyContinue)
+          $vivos = @(Get-Process -Name 'Centro-Turing-3.1' -ErrorAction SilentlyContinue)
           "procesos vivos: $($vivos.Count)"
           if ($vivos.Count -eq 0) { throw "El ejecutable se ha cerrado al arrancar" }
           $vivos | Stop-Process -Force
@@ -119,12 +119,12 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: centro-turing-exe
-          path: dist/Centro-Turing-3.0.exe
+          path: dist/Centro-Turing-3.1.exe
           if-no-files-found: error
 
       - name: Publicar el .exe en el release
         if: github.event_name == 'release'
         shell: bash
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/Centro-Turing-3.0.exe
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/Centro-Turing-3.1.exe
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
