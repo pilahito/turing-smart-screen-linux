@@ -49,6 +49,30 @@ Cambiar tema y reiniciar:
 ./scripts/set-theme.sh LandscapeModernDevice35
 ```
 
+## Centro Turing 3.0 — panel gráfico (nuevo)
+
+La misma interfaz gráfica en **Linux y Windows** (Tkinter/ttk, sin dependencias extra):
+
+```bash
+./scripts/turing-center.sh          # abre el panel gráfico
+./scripts/turing-center.sh --status # estado en texto, sin GUI
+```
+
+También está en el menú de texto (opción **g**) y, tras `install-desktop-menu.sh`,
+como acceso directo **Centro Turing** en el Escritorio y en el menú de aplicaciones.
+
+Qué incluye:
+
+- **Panel**: estado en vivo (encendida/apagada, puerto, brillo, sensores), vista previa del
+  tema activo y botones Encender / Apagar / Reiniciar
+- **Temas**: catálogo con filtro por medida y orientación, búsqueda instantánea y vista previa
+  del fondo antes de aplicar
+- **Ajustes**: edita `config.yaml` (tema, sensores, revisión, puerto, brillo, clima) conservando
+  comentarios y orden, con copia `.bak-centro` y botón de restaurar
+- **Registro**: seguimiento de `/tmp/turing-screen.log` en vivo
+- **Sistema**: autostart con un interruptor, módulos de ventiladores, puente de FPS,
+  pantalla virtual, diagnóstico y actualización por `git pull`
+
 ## Menú en el escritorio
 
 ```bash
@@ -57,6 +81,7 @@ Cambiar tema y reiniciar:
 ```
 
 Opciones del menú:
+- **Panel gráfico** (Centro Turing 3.0) — opción `g`
 - Elegir tema con filtro **landscape / portrait** (41+ temas 3.5")
 - **Galería visual** de temas en el navegador
 - **Descargar temas** de la comunidad (RedLineGraphs, CpuGpuStatsMono, …)

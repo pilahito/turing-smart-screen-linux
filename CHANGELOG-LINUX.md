@@ -1,5 +1,29 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.7-linux-ubuntu] - 2026-09-22
+
+### Nuevo
+- **Centro Turing 3.0** (`tools/turing_center.py`): panel gráfico multiplataforma que funciona
+  igual en **Windows y Linux**, con Tkinter/ttk (sin dependencias nuevas obligatorias).
+  - Panel en vivo: estado del monitor, puerto, brillo y modo de sensores + vista previa del tema
+  - Catálogo de temas con filtro por medida/orientación, búsqueda y vista previa del fondo
+  - Ajustes de `config.yaml` (tema, sensores, revisión, puerto, brillo, clima) conservando
+    comentarios y orden, con copia `.bak-centro`
+  - Registro en vivo, diagnóstico del sistema y arranque automático con un interruptor
+  - `--status` (estado en texto), `--theme NOMBRE` y `--selftest` (auditoría de layout)
+- `scripts/turing-center.sh` — lanzador del panel gráfico para Linux
+- `scripts/install-desktop-menu.sh` — crea ahora también el acceso directo **Centro Turing**
+  (GUI, sin terminal) y lo registra en el menú de aplicaciones
+- `scripts/turing-menu.sh` — nueva opción **g) Panel gráfico (Centro Turing 3.0)**;
+  el menú de texto se mantiene como respaldo
+
+### Corregido
+- La interfaz anterior (Centro Turing v2) se recortaba y solapaba: usaba `overrideredirect`,
+  tamaño fijo 1100x720 y etiquetas flotantes con `place()` encima del contenido. La nueva
+  interfaz usa decoración nativa, `grid` con pesos, páginas con scroll y barra de estado.
+- Estado de ventana inválido (`1x1`) guardado antes de mapear: la ventana podía arrancar
+  invisible. Ahora solo se guarda una geometría válida (>= 920x560).
+
 ## [1.0.6-linux-ubuntu] - 2026-06-23
 
 ### Corregido
