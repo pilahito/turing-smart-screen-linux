@@ -19,6 +19,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import mimetypes
+import os
 import shutil
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -61,8 +62,11 @@ class LcdSimulated(LcdComm):
                  update_queue: Optional[queue.Queue] = None):
         LcdComm.__init__(self, com_port, display_width, display_height, update_queue)
         self.screen_image = Image.new("RGB", (self.get_width(), self.get_height()), (255, 255, 255))
-        self.screen_image.save("tmp", "PNG")
-        shutil.copyfile("tmp", SCREENSHOT_FILE)
+        # Guardado sin fichero intermedio llamado "tmp": la aplicacion crea
+        # una CARPETA tmp/, y guardar un fichero con ese nombre fallaba.
+        destino = SCREENSHOT_FILE
+        self.screen_image.save(destino + ".new", "PNG")
+        os.replace(destino + ".new", destino)
         self.orientation = Orientation.PORTRAIT
 
         try:
