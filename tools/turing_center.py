@@ -377,10 +377,11 @@ class Platform:
         """
         encontrados: list[tuple[int, str]] = []
         raiz = str(ROOT).replace("\\", "/").lower()
+        candidatos: list[tuple[int, int, str]] = []
         try:
             import psutil  # type: ignore
 
-            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+            for proc in psutil.process_iter(["pid", "ppid", "name", "cmdline"]):
                 try:
                     info = proc.info
                     cmdline = " ".join(info.get("cmdline") or [])
@@ -398,9 +399,14 @@ class Platform:
                     descripcion = f"PID {info['pid']}"
                     if raiz not in pistas:
                         descripcion += " (copia antigua del programa)"
-                    encontrados.append((int(info["pid"]), descripcion))
+                    candidatos.append((int(info["pid"]), int(info["ppid"]), descripcion))
                 except Exception:
                     continue
+            # En Windows, el python.exe/pythonw.exe de un venv es un lanzador que
+            # arranca el interprete base con el mismo comando: padre e hijo son el
+            # MISMO monitor. Solo se cuentan las raices del arbol.
+            pids = {pid for pid, _, _ in candidatos}
+            encontrados = [(pid, desc) for pid, ppid, desc in candidatos if ppid not in pids]
         except Exception:
             pid = 0
             try:
