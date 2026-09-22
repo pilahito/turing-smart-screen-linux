@@ -1,5 +1,74 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.8-linux-ubuntu] - 2026-09-22
+
+Versión **estable**: paquetes instalables, correcciones de librería y la suite de
+pruebas del proyecto en verde.
+
+### Paquetes instalables
+- **Windows**: `Centro-Turing-3.1.exe` (PyInstaller, un solo fichero, sin consola) con
+  el icono del proyecto incrustado. Se acabó el icono de Python: se fija la identidad
+  de la aplicación (`SetCurrentProcessExplicitAppUserModelID`) y el ejecutable lleva
+  `res/icons/centro-turing.ico`.
+- **Ubuntu/Debian**: `centro-turing_1.0.8_all.deb` (57 MB, 75 temas). Instala en
+  `/opt/centro-turing`, los comandos `centro-turing` y `turing-menu`, la entrada del
+  menú y el icono. Se construye con `tools/build_deb.py` (sin necesitar `dpkg-deb`) y
+  el CI lo **instala de prueba** en cada release.
+- El `.deb` no incluye `config.yaml` (configuración personal): la aplicación lo crea
+  desde `config.example.yaml` la primera vez que se abre.
+- `--mockup CARPETA` genera las imágenes de la interfaz sin abrir la ventana.
+
+### Corregido (librería)
+- **Rev. C — tamaño del bitmap**: se enviaba `ancho²/64` en vez de `ancho×alto/64`.
+  Para una 3.5"/5" (480x800) mandaba 3600 en lugar de 6000 (0x1770), que es el valor
+  que llevan las constantes por modelo (`DISPLAY_BITMAP_5INCH`) y los ficheros golden.
+- **Rev. C — arranque**: `sub_revision` y `rom_version` solo se creaban en
+  `InitializeComm()`, así que cualquier uso previo fallaba con `AttributeError`.
+  Ahora tienen valor por defecto en el constructor y existe el comando genérico
+  `DISPLAY_BITMAP` para cuando aún no se ha detectado el modelo.
+- **Ficheros golden de rev. C** actualizados: estaban grabados de cuando la inversión
+  se hacía por hardware (comando `OPTIONS` + `FLIP_180`), rama que está desactivada en
+  el propio proyecto porque la inversión se hace rotando la imagen por software.
+- **Suite de pruebas: 37 pasan, 0 fallan** (antes 29 pasaban y 8 fallaban).
+
+### Corregido (panel)
+- Se comprobaba el PID de `monitor.pid` sin verificar de quién era antes de matarlo
+  (Windows recicla PID) y podía cerrar un proceso ajeno.
+- Si el monitor corría como administrador, el panel informaba de "detenido" sin serlo.
+
+## [1.0.7-linux-ubuntu] - 2026-09-22
+
+### Nuevo
+- **Centro Turing 3.0** (`tools/turing_center.py`): panel gráfico multiplataforma que funciona
+  igual en **Windows y Linux**, con Tkinter/ttk (sin dependencias nuevas obligatorias).
+  - Panel en vivo: estado del monitor, puerto, brillo y modo de sensores + vista previa del tema
+  - Catálogo de temas con filtro por medida/orientación, búsqueda y vista previa del fondo
+  - Ajustes de `config.yaml` (tema, sensores, revisión, puerto, brillo, clima) conservando
+    comentarios y orden, con copia `.bak-centro`
+  - Registro en vivo, diagnóstico del sistema y arranque automático con un interruptor
+  - `--status` (estado en texto), `--theme NOMBRE`, `--selftest` (auditoría de layout)
+    y `--mockup CARPETA` (genera imágenes de la interfaz sin abrir ventana)
+- **Interfaz 2026** (`tools/turing_design.py` + `tools/turing_ui2026.py`): rediseño visual completo.
+  - Todo se dibuja con Pillow sobre un lienzo único: superficies redondeadas con degradado,
+    borde luminoso y sombra; cabecera con resplandores; tipografía Segoe UI / Roboto
+  - Componentes propios: botones con estados, interruptores animados, control segmentado,
+    chips, deslizador de brillo arrastrable, tarjetas de estado con mini-gráficas y avisos flotantes
+  - Iconos vectoriales dibujados a mano (no dependen de que la tipografía tenga el glifo)
+  - Transición deslizante entre páginas, resaltado al pasar el ratón y desplazamiento con rueda
+  - El mismo motor genera las previsualizaciones, así que el diseño se puede revisar sin abrir la app
+- `scripts/turing-center.sh` — lanzador del panel gráfico para Linux
+- `scripts/install-desktop-menu.sh` — crea ahora también el acceso directo **Centro Turing**
+  (GUI, sin terminal) y lo registra en el menú de aplicaciones
+- `scripts/turing-menu.sh` — nueva opción **g) Panel gráfico (Centro Turing 3.0)**;
+  el menú de texto se mantiene como respaldo
+
+### Corregido
+- La interfaz anterior (Centro Turing v2) se recortaba y solapaba: usaba `overrideredirect`,
+  tamaño fijo 1100x720 y etiquetas flotantes con `place()` encima del contenido. La nueva
+  interfaz usa decoración nativa, `grid` con pesos, páginas con scroll y barra de estado.
+- Estado de ventana inválido (`1x1`) guardado antes de mapear: la ventana podía arrancar
+  invisible. Ahora solo se guarda una geometría válida (>= 920x560).
+
 ## [1.0.6-linux-ubuntu] - 2026-06-23
 
 ### Corregido

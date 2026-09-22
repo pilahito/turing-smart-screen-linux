@@ -1,0 +1,130 @@
+name: Generate Centro Turing packages
+
+# Construye y valida los paquetes instalables:
+#   * .deb  para Ubuntu/Debian (se comprueba e instala de verdad en el runner)
+#   * .exe  para Windows (con el icono del proyecto incrustado)
+# Se ejecuta al publicar un release (y sube los ficheros) o a mano desde Actions.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux-deb:
+    name: Paquete .deb (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Construir el .deb
+        run: python tools/build_deb.py --out dist
+
+      - name: Validar la estructura con dpkg-deb
+        run: |
+          set -e
+          ls -lh dist/*.deb
+          dpkg-deb --info dist/*.deb
+          echo "--- contenido (primeras 25 rutas) ---"
+          dpkg-deb --contents dist/*.deb | head -25
+          echo "--- ficheros totales ---"
+          dpkg-deb --contents dist/*.deb | wc -l
+
+      - name: Instalar el paquete y comprobar que funciona
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo dpkg -i dist/*.deb || sudo apt-get -f install -y
+          test -x /usr/bin/centro-turing
+          test -x /usr/bin/turing-menu
+          test -f /opt/centro-turing/main.py
+          test -f /opt/centro-turing/config.example.yaml
+          test ! -f /opt/centro-turing/config.yaml   # la config personal no se empaqueta
+          python3 -m py_compile /opt/centro-turing/tools/turing_center.py
+          # --status necesita Tkinter y el proyecto, no la pantalla fisica
+          /usr/bin/centro-turing --status
+          dpkg -s centro-turing | grep -E '^(Package|Version|Architecture|Depends)'
+
+      - name: Desinstalar (comprueba que el paquete se va limpio)
+        run: |
+          sudo dpkg -r centro-turing
+          test ! -f /usr/bin/centro-turing
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: centro-turing-deb
+          path: dist/*.deb
+          if-no-files-found: error
+
+      - name: Publicar el .deb en el release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/*.deb
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  windows-exe:
+    name: Ejecutable .exe (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Dependencias de compilacion
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pyinstaller~=6.20.0" "pillow>=10" pyserial psutil pyyaml
+
+      - name: Generar el icono del proyecto (por si no estuviera)
+        run: python -c "import sys; sys.path.insert(0,'tools'); import turing_design as d; from pathlib import Path; d.save_app_icon(Path('res/icons/centro-turing.ico'), Path('res/icons/centro-turing.png'))"
+
+      - name: Construir el .exe
+        run: pyinstaller --noconfirm --clean centro-turing.spec
+
+      - name: Comprobar que el .exe lleva el icono del proyecto
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $ico = [System.Drawing.Icon]::ExtractAssociatedIcon("dist/Centro-Turing-3.1.exe")
+          $bmp = $ico.ToBitmap()
+          $cyan = 0
+          for ($x = 0; $x -lt $bmp.Width; $x++) {
+            for ($y = 0; $y -lt $bmp.Height; $y++) {
+              $c = $bmp.GetPixel($x, $y)
+              if ([Math]::Abs($c.R - 34) -lt 40 -and [Math]::Abs($c.G - 211) -lt 40 -and [Math]::Abs($c.B - 238) -lt 40) { $cyan++ }
+            }
+          }
+          "pixeles del color del proyecto: $cyan de $($bmp.Width * $bmp.Height)"
+          if ($cyan -lt 30) { throw "El .exe no lleva el icono del proyecto (se veria el de Python)" }
+
+      - name: Arrancar el .exe y comprobar que se mantiene vivo
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "dist/Centro-Turing-3.1.exe" -PassThru
+          Start-Sleep -Seconds 12
+          $vivos = @(Get-Process -Name 'Centro-Turing-3.1' -ErrorAction SilentlyContinue)
+          "procesos vivos: $($vivos.Count)"
+          if ($vivos.Count -eq 0) { throw "El ejecutable se ha cerrado al arrancar" }
+          $vivos | Stop-Process -Force
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: centro-turing-exe
+          path: dist/Centro-Turing-3.1.exe
+          if-no-files-found: error
+
+      - name: Publicar el .exe en el release
+        if: github.event_name == 'release'
+        shell: bash
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/Centro-Turing-3.1.exe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -17,6 +17,20 @@ Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-sm
 
 ## Instalación rápida (Ubuntu)
 
+### Con el paquete .deb
+
+```bash
+sudo dpkg -i centro-turing_1.0.7_all.deb    # o: sudo apt install ./centro-turing_1.0.7_all.deb
+centro-turing                                # abre el panel
+```
+
+Instala la aplicación en `/opt/centro-turing`, deja los comandos `centro-turing` y
+`turing-menu`, y añade la entrada **Centro Turing** al menú de aplicaciones. Se genera
+desde el propio repositorio con `python tools/build_deb.py` (no necesita `dpkg-deb`) y
+el flujo de GitHub Actions lo construye y **lo instala de prueba** en cada release.
+
+### Desde el código
+
 ```bash
 git clone https://github.com/pilahito/turing-smart-screen-linux.git
 cd turing-smart-screen-linux
@@ -49,6 +63,53 @@ Cambiar tema y reiniciar:
 ./scripts/set-theme.sh LandscapeModernDevice35
 ```
 
+## Centro Turing 3.0 — panel gráfico con interfaz 2026
+
+La misma interfaz gráfica en **Linux y Windows** (Tkinter + Pillow, sin dependencias extra):
+
+```bash
+./scripts/turing-center.sh          # abre el panel gráfico
+./scripts/turing-center.sh --status # estado en texto, sin GUI
+./scripts/turing-center.sh --mockup tmp/mockups   # imágenes de la interfaz, sin abrir ventana
+```
+
+Aspecto **2026**: superficies redondeadas con degradado, borde luminoso y sombra; cabecera con
+resplandores; iconos vectoriales; tarjetas de estado con mini-gráficas; control segmentado;
+interruptores animados; deslizador de brillo arrastrable y transiciones deslizantes entre páginas.
+Todo se renderiza con Pillow (`tools/turing_design.py`), así que las imágenes de `--mockup` son
+exactamente el mismo diseño que se ve en la aplicación.
+
+![Centro Turing](res/docs/centro-turing-banner.png)
+
+### Icono del proyecto
+
+`res/icons/centro-turing.ico` (multirresolución 16→256) y `centro-turing.png` se generan con el
+mismo motor de dibujo:
+
+```bash
+python -c "import sys; sys.path.insert(0,'tools'); import turing_design as d; from pathlib import Path; \
+d.save_app_icon(Path('res/icons/centro-turing.ico'), Path('res/icons/centro-turing.png')); \
+d.social_banner(Path('res/docs/centro-turing-banner.png'))"
+```
+
+- El panel lo usa como icono de ventana y de barra de tareas automáticamente.
+- `res/docs/centro-turing-banner.png` (1280x640) sirve para **GitHub → Settings → Social preview**.
+
+También está en el menú de texto (opción **g**) y, tras `install-desktop-menu.sh`,
+como acceso directo **Centro Turing** en el Escritorio y en el menú de aplicaciones.
+
+Qué incluye:
+
+- **Panel**: estado en vivo (encendida/apagada, puerto, brillo, sensores), vista previa del
+  tema activo y botones Encender / Apagar / Reiniciar
+- **Temas**: catálogo con filtro por medida y orientación, búsqueda instantánea y vista previa
+  del fondo antes de aplicar
+- **Ajustes**: edita `config.yaml` (tema, sensores, revisión, puerto, brillo, clima) conservando
+  comentarios y orden, con copia `.bak-centro` y botón de restaurar
+- **Registro**: seguimiento de `/tmp/turing-screen.log` en vivo
+- **Sistema**: autostart con un interruptor, módulos de ventiladores, puente de FPS,
+  pantalla virtual, diagnóstico y actualización por `git pull`
+
 ## Menú en el escritorio
 
 ```bash
@@ -57,6 +118,7 @@ Cambiar tema y reiniciar:
 ```
 
 Opciones del menú:
+- **Panel gráfico** (Centro Turing 3.0) — opción `g`
 - Elegir tema con filtro **landscape / portrait** (41+ temas 3.5")
 - **Galería visual** de temas en el navegador
 - **Descargar temas** de la comunidad (RedLineGraphs, CpuGpuStatsMono, …)
@@ -82,6 +144,8 @@ sudo ./scripts/install-fan-modules.sh   # ventiladores Gigabyte (una vez)
 - Python 3.10+
 - Pantalla USB conectada (`lsusb | grep 1a86:5722`)
 - Usuario en grupo `dialout` (el instalador lo configura)
+- `python3-tk` para el panel gráfico (el instalador ya lo añade; en Arch: `sudo pacman -S tk`)
+- Opcional: `lm-sensors` para temperaturas y `python3-pil` para las vistas previas de temas
 
 ## Licencia
 

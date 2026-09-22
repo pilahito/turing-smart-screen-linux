@@ -29,6 +29,12 @@
 from library.pythoncheck import check_python_version
 check_python_version()
 
+# Windows: si el monitor va sin consola (lo lanza el panel en segundo plano), cada
+# subproceso de sensores (nvidia-smi via GPUtil, ffmpeg...) provoca que Windows le
+# cree una consola nueva: una ventana negra en cada refresco de sensores.
+from library.no_console_windows import apply as _no_console_windows
+_no_console_windows()
+
 import os
 import sys
 

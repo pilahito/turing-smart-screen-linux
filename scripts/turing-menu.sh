@@ -170,6 +170,9 @@ while true; do
   echo "  2) Galería visual de temas (navegador)"
   echo "  3) Descargar temas de la comunidad"
   echo ""
+  echo "  ── Interfaz ──"
+  echo "  g) Panel gráfico (Centro Turing 3.0)"
+  echo ""
   echo "  ── Monitor ──"
   echo "  4) Reiniciar monitor USB"
   echo "  5) Iniciar / parar monitor"
@@ -190,6 +193,16 @@ while true; do
   read -r -p "Opción: " opt
 
   case "$opt" in
+    g|G)
+      echo "Abriendo Centro Turing 3.0 (panel gráfico)..."
+      if [[ -x "$DIR/scripts/turing-center.sh" ]]; then
+        "$DIR/scripts/turing-center.sh" &
+        sleep 1
+      else
+        echo "❌ No encuentro scripts/turing-center.sh"
+        pause
+      fi
+      ;;
     1) pick_theme; TCOUNT="$(theme_count 2>/dev/null || echo "?")" ;;
     2)
       echo ""
