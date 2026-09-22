@@ -342,16 +342,46 @@ def icon(name: str, *, size: int = 18, color: str = C["muted"], accent: str | No
 
 
 def brand_mark(size: int = 34, accent: str = C["accent"], accent_2: str = C["accent_2"]) -> Image.Image:
-    """Logotipo: cuadrado redondeado con gradiente y rombo interior."""
-    def paint(draw: ImageDraw.ImageDraw, s: int, box: tuple[int, int]) -> None:
-        draw.rounded_rectangle([(s, s), (box[0] - s, box[1] - s)], radius=7 * s, fill=rgba(accent))
-        draw.polygon([(box[0] // 2, box[1] // 3), (box[0] * 2 // 3, box[1] // 2),
-                      (box[0] // 2, box[1] * 2 // 3), (box[0] // 3, box[1] // 2)],
-                     fill=rgba(mix(accent, accent_2, 0.55)))
-        draw.polygon([(box[0] // 2, box[1] // 3), (box[0] * 2 // 3, box[1] // 2), (box[0] // 2, box[1] // 2)],
-                     fill=(255, 255, 255, 70))
+    """Logotipo: mini pantalla con un grafico de barras.
 
-    return _antialias((size, size), paint, scale=4)
+    Antes era un rombo dentro de un cuadrado turquesa: se leia mal y no decia nada.
+    Ahora es lo que hace la aplicacion: una pantallita mostrando datos.
+    """
+    escala = 4
+    lienzo = (size * escala, size * escala)
+    ancho, alto = lienzo
+    fondo = gradient_image(lienzo, accent, accent_2, diagonal=True).convert("RGBA")
+    icono = Image.new("RGBA", lienzo, (0, 0, 0, 0))
+    icono.paste(fondo, (0, 0), rounded_mask(lienzo, radius=int(ancho * 0.23)))
+    # El brillo y el borde van en una capa aparte: dibujar con alfa sobre RGBA
+    # sustituye el pixel en vez de mezclarlo (salia un manchon blanco).
+    detalle = Image.new("RGBA", lienzo, (0, 0, 0, 0))
+    pincel = ImageDraw.Draw(detalle)
+    pincel.rounded_rectangle([(int(ancho * 0.06), int(alto * 0.06)),
+                              (int(ancho * 0.94), int(alto * 0.5))],
+                             radius=int(ancho * 0.18), fill=(255, 255, 255, 22))
+    detalle = detalle.filter(ImageFilter.GaussianBlur(ancho * 0.05))
+    icono = Image.alpha_composite(icono, detalle)
+    dibujo = ImageDraw.Draw(icono)
+    # pantalla
+    margen = int(ancho * 0.21)
+    pantalla = (margen, margen, ancho - margen, alto - margen)
+    dibujo.rounded_rectangle(pantalla, radius=int(ancho * 0.10), fill=(11, 16, 27, 255))
+    # tres barras crecientes
+    base = pantalla[3] - int(alto * 0.075)
+    hueco = (pantalla[2] - pantalla[0]) / 4.15
+    for indice, fraccion in enumerate((0.36, 0.60, 0.88)):
+        x0 = pantalla[0] + hueco * (0.5 + indice)
+        y0 = base - int((base - pantalla[1]) * fraccion)
+        dibujo.rounded_rectangle([x0, y0, x0 + hueco * 0.62, base],
+                                 radius=max(1, int(hueco * 0.22)), fill=(255, 255, 255, 255))
+    # borde interior fino: da definicion sin manchar
+    borde = Image.new("RGBA", lienzo, (0, 0, 0, 0))
+    ImageDraw.Draw(borde).rounded_rectangle(
+        [(0, 0), (ancho - 1, alto - 1)], radius=int(ancho * 0.23),
+        outline=(255, 255, 255, 70), width=max(1, int(ancho * 0.012)))
+    icono = Image.alpha_composite(icono, borde)
+    return icono.resize((size, size), Image.LANCZOS)
 
 
 def button(label: str, *, state: str = "normal", kind: str = "primary", width: int = 150,

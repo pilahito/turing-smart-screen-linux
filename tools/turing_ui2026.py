@@ -606,9 +606,9 @@ class App(tk.Tk):
     def _render_header(self, width: int) -> None:
         self.scene.image("shell", "hero", self.scene.cached(
             ("hero", width), lambda: D.hero_backdrop((width, D.HEADER_H))), 0, 0)
-        self.scene.image("shell", "mark", self.scene.cached(("mark",), lambda: D.brand_mark(40)), SP["xl"], 22)
-        self.scene.text("shell", SP["xl"] + 54, 22, f"{APP_NAME} {VERSION}", size=T["h1"], weight="bold")
-        self.scene.text("shell", SP["xl"] + 55, 50, "Panel de la mini pantalla USB · Windows y Linux",
+        self.scene.image("shell", "mark", self.scene.cached(("mark",), lambda: D.brand_mark(42)), SP["xl"], 24)
+        self.scene.text("shell", SP["xl"] + 58, 22, f"{APP_NAME} {VERSION}", size=T["h1"], weight="bold")
+        self.scene.text("shell", SP["xl"] + 59, 50, "Panel de la mini pantalla USB · Windows y Linux",
                         size=T["small"], color=C["muted"])
         running, detail = self.status
         status_chip = self.scene.cached(
