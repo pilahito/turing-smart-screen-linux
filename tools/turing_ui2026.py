@@ -39,6 +39,16 @@ NAV = (("panel", "Panel", "panel"), ("temas", "Temas", "themes"), ("ajustes", "A
        ("registro", "Registro", "log"), ("sistema", "Sistema", "system"), ("acerca", "Acerca de", "about"))
 LIST_ROW_H = 50
 SEGMENTS = [("Todos", "all"), ('3.5" H', "35h"), ('3.5" V', "35v"), ('5"', "5"), ('8.8"', "88")]
+# Campos editables de la pagina Ajustes: (clave en config.yaml, etiqueta)
+AJUSTES: tuple[tuple[str, str], ...] = (
+    ("THEME", "Tema"),
+    ("HW_SENSORS", "Modo de sensores"),
+    ("REVISION", "Revisión de pantalla"),
+    ("COM_PORT", "Puerto serie"),
+    ("CLOCK_FORMAT", "Formato de reloj"),
+    ("WEATHER_LATITUDE", "Latitud"),
+    ("WEATHER_LONGITUDE", "Longitud"),
+)
 # Tk no entiende los anclajes de Pillow: se traducen.
 TK_ANCHOR = {"lm": "w", "mm": "center", "rm": "e", "la": "nw", "lt": "nw", "ma": "n",
              "ra": "ne", "center": "center", "nw": "nw", "n": "n", "ne": "ne", "e": "e",
@@ -126,6 +136,8 @@ class App(tk.Tk):
         self.ports: list[str] = []
         self._status_pending = False
         self._resultados: queue.Queue = queue.Queue()
+        # Campos editables de la pagina Ajustes (encima de los dibujados en el lienzo)
+        self._ajustes_campos: dict[str, tk.Entry] = {}
 
         self.title(f"{APP_NAME} {VERSION} — panel de la mini pantalla USB")
         self.configure(bg=C["bg"])
@@ -573,6 +585,9 @@ class App(tk.Tk):
         if not keep_offset:
             self.scene.offset_x = 0
         self.scene.clear("all")
+        # Los campos de Ajustes solo se ven en su pagina
+        if self.page != "ajustes":
+            self._ocultar_campos_ajustes()
         self._dragging = dragging or getattr(self, "_dragging", False)
         self.scene.image("shell", "backdrop", self.scene.cached(
             ("backdrop", width, height), lambda: D.app_backdrop((width, height))), 0, 0)
@@ -838,19 +853,14 @@ class App(tk.Tk):
 
     def _page_ajustes(self, x: int, y: int, width: int, height: int, pressed: str) -> None:
         tag = "current_page"
-        self._title(tag, x, y, "Ajustes", "config.yaml editable conservando comentarios y orden (.bak-centro).")
+        self._title(tag, x, y, "Ajustes", "Edita aquí y pulsa Guardar ajustes (config.yaml conserva comentarios).")
         left_w = int((width - SP["lg"]) * 0.58)
         right_w = width - left_w - SP["lg"]
-        rows = [("Tema", self.config_editor.get("THEME")),
-                ("Modo de sensores", self.config_editor.get("HW_SENSORS")),
-                ("Revisión de pantalla", self.config_editor.get("REVISION")),
-                ("Puerto serie", self.config_editor.get("COM_PORT")),
-                ("Formato de reloj", self.config_editor.get("CLOCK_FORMAT")),
-                ("Latitud", self.config_editor.get("WEATHER_LATITUDE")),
-                ("Longitud", self.config_editor.get("WEATHER_LONGITUDE"))]
+        rows = [(etiqueta, self.config_editor.get(clave)) for clave, etiqueta in AJUSTES]
         card_h = 96 + len(rows) * 46
         card = self.scene.cached(("settings_card", tuple(rows)), lambda: self._settings_card(left_w, card_h, rows))
         self.scene.image(tag, "settings", card, x, y + 66)
+        self._campos_ajustes(x, y, left_w)
 
         switches = [("Invertir imagen", self.config_editor.get("DISPLAY_REVERSE").lower() == "true", "reverse"),
                     ("Reiniciar la pantalla al arrancar",
@@ -881,6 +891,33 @@ class App(tk.Tk):
         self.scene.image(tag, "restore", restore, x + 432, buttons_y)
         self.scene.hotspot(tag, "restore", x + 432, buttons_y, 180, 44, self._restore_backup)
 
+    def _campos_ajustes(self, x: int, y: int, ancho_tarjeta: int) -> None:
+        """Coloca campos de texto reales encima de los dibujados en el lienzo.
+
+        Antes eran dibujos y "Guardar ajustes" releia el propio fichero: no guardaba
+        nada de lo escrito. Ahora cada fila es un Entry de verdad.
+        """
+        ancho_campo = int(ancho_tarjeta * 0.46)
+        base_y = y + 66 + SP["lg"] + 44
+        for indice, (clave, _etiqueta) in enumerate(AJUSTES):
+            caja = self._ajustes_campos.get(clave)
+            if caja is None:
+                caja = tk.Entry(self, relief="flat", bd=0, bg=C["surface_2"], fg=C["text"],
+                                insertbackground=C["accent"], highlightthickness=0,
+                                font=(self._font_family(), T["small"]))
+                self._ajustes_campos[clave] = caja
+            valor = self.config_editor.get(clave)
+            if caja.get() != valor:
+                caja.delete(0, "end")
+                caja.insert(0, valor)
+            caja.place(x=x + ancho_tarjeta - ancho_campo - SP["lg"] + SP["md"],
+                       y=base_y + indice * 46 + 5,
+                       width=ancho_campo - SP["md"] * 2, height=22)
+
+    def _ocultar_campos_ajustes(self) -> None:
+        for caja in self._ajustes_campos.values():
+            caja.place_forget()
+
     def _settings_card(self, width: int, height: int, rows: list[tuple[str, str]]):
         image = D.glass((width, height), radius=R["card"], shadow=12)
         D.draw_text(image, (SP["lg"], SP["lg"]), "Pantalla y sensores", size=T["h2"], weight="bold")
@@ -904,12 +941,40 @@ class App(tk.Tk):
         return image
 
     def _save_settings(self) -> None:
-        values = {"THEME": self.config_editor.get("THEME"),
-                  "HW_SENSORS": self.config_editor.get("HW_SENSORS"),
-                  "REVISION": self.config_editor.get("REVISION"),
-                  "COM_PORT": self.config_editor.get("COM_PORT"),
-                  "CLOCK_FORMAT": self.config_editor.get("CLOCK_FORMAT")}
-        self.act_save(values)
+        """Guarda lo escrito en los campos y reinicia el monitor para aplicarlo."""
+        valores = {}
+        for clave, _etiqueta in AJUSTES:
+            caja = self._ajustes_campos.get(clave)
+            if caja is not None:
+                valores[clave] = caja.get().strip()
+        valores = {clave: valor for clave, valor in valores.items() if valor != ""}
+        # Solo se escribe lo que de verdad cambia (asi no se reformatea el resto)
+        valores = {clave: valor for clave, valor in valores.items()
+                   if valor != self.config_editor.get(clave)}
+
+        tema = valores.get("THEME", "")
+        if tema and not (core.THEMES_DIR / tema / "theme.yaml").exists():
+            self.notify(f'El tema "{tema}" no existe (revisa el nombre)', error=True)
+            return
+        sensores = valores.get("HW_SENSORS", "").upper()
+        if sensores and sensores not in core.SENSOR_MODES:
+            self.notify(f'Modo de sensores no válido: {sensores}', error=True)
+            return
+        for clave, etiqueta in (("WEATHER_LATITUDE", "latitud"), ("WEATHER_LONGITUDE", "longitud")):
+            try:
+                float(valores.get(clave, "0"))
+            except ValueError:
+                self.notify(f"La {etiqueta} tiene que ser un número", error=True)
+                return
+
+        def task():
+            cambiados = self.config_editor.set_many({clave: (valor, None) for clave, valor in valores.items()})
+            if not cambiados:
+                return True, "Sin cambios"
+            ok, mensaje = self.platform.restart()
+            return ok, (f"Guardado y aplicado: {', '.join(cambiados)}" if ok else mensaje)
+
+        self.run_bg("Guardando ajustes", task)
 
     def _restore_backup(self) -> None:
         if self.config_editor.restore_backup():
