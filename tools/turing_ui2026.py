@@ -430,7 +430,13 @@ class App(tk.Tk):
                 "Ventana de administrador lanzada"))
             return
         if key == "install":
-            self.act_open(core.ROOT / "Instalar.ps1")
+            # EJECUTAR el instalador, no abrirlo en el editor. Va en su propia
+            # consola visible para que se vea el progreso de pip.
+            self.act_script("Instalando dependencias", core.ROOT / "Instalar.ps1",
+                            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+            return
+        if key in ("instalar-linux",):
+            self.act_script("Instalando dependencias", core.ROOT / "scripts" / "install-ubuntu.sh", ["bash"])
             return
         script = core.ROOT / "scripts" / scripts.get(key, "")
         if script.exists():
@@ -438,6 +444,20 @@ class App(tk.Tk):
                                               f"{script.name} finalizado"))
         else:
             self.notify("Acción no disponible", error=True)
+
+    def act_script(self, label: str, script: Path, shell: list[str]) -> None:
+        """Ejecuta un script con su intérprete (nunca lo abre con el editor)."""
+        if not script.exists():
+            self.notify(f"No encuentro {script.name}", error=True)
+            return
+
+        def task():
+            code = self.platform.run_visible([*shell, str(script)], cwd=core.ROOT)
+            if code == 0:
+                return True, f"{script.name}: completado"
+            return False, f"{script.name}: terminó con errores (mira la ventana)"
+
+        self.run_bg(label, task)
 
     # -- render -------------------------------------------------------------------
     def render(self, pressed: str = "", keep_offset: bool = False, dragging: bool = False) -> None:

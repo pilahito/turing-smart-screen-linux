@@ -571,6 +571,21 @@ class Platform:
     # CREATE_NO_WINDOW: el panel va sin consola, asi que sin esta marca cada
     # taskkill/tasklist/git abriria una ventana negra durante un instante.
     _NO_WINDOW = 0x08000000 if IS_WINDOWS else 0
+    _NEW_CONSOLE = 0x00000010 if IS_WINDOWS else 0
+
+    @classmethod
+    def run_visible(cls, args: list[str], cwd: Path | None = None, timeout: int = 3600) -> int:
+        """Ejecuta un comando en su PROPIA consola visible (instaladores).
+
+        Se usa para scripts largos como Instalar.ps1: el usuario ve el progreso de
+        pip y el panel recibe el codigo de salida al terminar. Sin capturar la
+        salida, porque entonces la ventana no mostraria nada.
+        """
+        try:
+            return subprocess.run(args, cwd=str(cwd) if cwd else None, timeout=timeout,
+                                  creationflags=cls._NEW_CONSOLE).returncode
+        except Exception:
+            return 1
 
     @classmethod
     def _run(cls, args: list[str], timeout: int = 20) -> str:
@@ -653,6 +668,7 @@ class LinuxPlatform(Platform):
 
     def extra_actions(self) -> list[tuple[str, str]]:
         return [
+            ("instalar-linux", "Instalar dependencias (install-ubuntu.sh)"),
             ("fans", "Instalar modulos de ventiladores (Gigabyte)"),
             ("fps", "Activar puente de FPS"),
             ("virtual", "Pantalla virtual (SIMU + navegador)"),
