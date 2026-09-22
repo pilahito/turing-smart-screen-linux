@@ -65,7 +65,7 @@ jobs:
 
       - name: Publicar el .deb en el release
         if: github.event_name == 'release'
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/*.deb
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/*.deb --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -125,6 +125,6 @@ jobs:
       - name: Publicar el .exe en el release
         if: github.event_name == 'release'
         shell: bash
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/Centro-Turing-3.1.exe
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/Centro-Turing-3.1.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
