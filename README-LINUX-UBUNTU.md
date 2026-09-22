@@ -17,6 +17,20 @@ Basado en [turing-smart-screen-python](https://github.com/mathoudebine/turing-sm
 
 ## Instalación rápida (Ubuntu)
 
+### Con el paquete .deb
+
+```bash
+sudo dpkg -i centro-turing_1.0.7_all.deb    # o: sudo apt install ./centro-turing_1.0.7_all.deb
+centro-turing                                # abre el panel
+```
+
+Instala la aplicación en `/opt/centro-turing`, deja los comandos `centro-turing` y
+`turing-menu`, y añade la entrada **Centro Turing** al menú de aplicaciones. Se genera
+desde el propio repositorio con `python tools/build_deb.py` (no necesita `dpkg-deb`) y
+el flujo de GitHub Actions lo construye y **lo instala de prueba** en cada release.
+
+### Desde el código
+
 ```bash
 git clone https://github.com/pilahito/turing-smart-screen-linux.git
 cd turing-smart-screen-linux
