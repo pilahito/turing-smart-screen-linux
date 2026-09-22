@@ -107,6 +107,8 @@ sudo ./scripts/install-fan-modules.sh   # ventiladores Gigabyte (una vez)
 - Python 3.10+
 - Pantalla USB conectada (`lsusb | grep 1a86:5722`)
 - Usuario en grupo `dialout` (el instalador lo configura)
+- `python3-tk` para el panel gráfico (el instalador ya lo añade; en Arch: `sudo pacman -S tk`)
+- Opcional: `lm-sensors` para temperaturas y `python3-pil` para las vistas previas de temas
 
 ## Licencia
 

@@ -20,7 +20,8 @@ fi
 if command -v apt-get >/dev/null && [[ "$(id -u)" -ne 0 ]]; then
   echo "→ Dependencias recomendadas (puede pedir contraseña)..."
   sudo apt-get update -qq
-  sudo apt-get install -y python3-venv python3-pip lm-sensors git \
+  # python3-tk es necesario para el panel gráfico (Centro Turing 3.0)
+  sudo apt-get install -y python3-venv python3-pip python3-tk lm-sensors git \
     libusb-1.0-0 udev 2>/dev/null || true
 fi
 

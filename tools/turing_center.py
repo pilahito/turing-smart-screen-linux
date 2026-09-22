@@ -404,6 +404,17 @@ class Platform:
         return self.autostart_path.exists()
 
     def set_autostart(self, enabled: bool) -> tuple[bool, str]:
+        # En Linux se prefiere la unidad systemd del proyecto (la que usan los
+        # scripts del repo). Escribir ademas un .desktop provocaria un doble
+        # arranque del monitor, asi que solo se usa como respaldo.
+        if IS_LINUX and self._systemd_available("turing-smart-screen.service"):
+            action = "enable" if enabled else "disable"
+            code = self._run_code(["systemctl", "--user", action, "turing-smart-screen.service"])
+            if code == 0:
+                return True, ("Arranque automatico activado (systemd)"
+                              if enabled else "Arranque automatico desactivado (systemd)")
+            return False, "systemctl no pudo cambiar el arranque automatico"
+
         path = self.autostart_path
         if not enabled:
             removed = False
@@ -411,8 +422,6 @@ class Platform:
                 if candidate.exists():
                     candidate.unlink()
                     removed = True
-            if IS_LINUX and self._systemd_available("turing-smart-screen.service"):
-                self._run(["systemctl", "--user", "disable", "turing-smart-screen.service"])
             return True, "Arranque automatico desactivado" if removed else "Ya estaba desactivado"
 
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -438,8 +447,6 @@ class Platform:
             )
             path.write_text(content, encoding="utf-8")
             path.chmod(0o755)
-            if self._systemd_available("turing-smart-screen.service"):
-                self._run(["systemctl", "--user", "enable", "turing-smart-screen.service"])
         return True, f"Arranque automatico activado ({path.name})"
 
     # -- puertos serie -----------------------------------------------------------
