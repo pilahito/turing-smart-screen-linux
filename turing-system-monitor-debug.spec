@@ -33,7 +33,7 @@ configure_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
+    icon=['res\\icons\\centro-turing.ico'],
     contents_directory='.',
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )
@@ -71,7 +71,7 @@ main_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
+    icon=['res\\icons\\centro-turing.ico'],
     contents_directory='.',
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )
@@ -109,7 +109,7 @@ editor_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['res\\icons\\monitor-icon-17865\\icon.ico'],
+    icon=['res\\icons\\centro-turing.ico'],
     contents_directory='.',
     version='tools\\windows-installer\\pyinstaller-version-info.txt',
 )

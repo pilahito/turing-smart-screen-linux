@@ -119,15 +119,64 @@ if __name__ == "__main__":
         logger.info("Caught signal %d, exiting" % signum)
         clean_stop()
 
+    def _tray_ui_lang():
+        """Prefer tools/pantalla-turing-ui.json, else WEATHER_LANGUAGE / es."""
+        try:
+            import json
+            ui = MAIN_DIRECTORY / "tools" / "pantalla-turing-ui.json"
+            if ui.is_file():
+                data = json.loads(ui.read_text(encoding="utf-8"))
+                lang = str(data.get("lang", "es")).lower()
+                if lang in ("es", "en"):
+                    return lang
+        except Exception:
+            pass
+        try:
+            from library.config import CONFIG_DATA
+            wl = str(CONFIG_DATA.get("config", {}).get("WEATHER_LANGUAGE", "es")).lower()
+            if wl.startswith("en"):
+                return "en"
+        except Exception:
+            pass
+        return "es"
+
+    def _tray_labels():
+        if _tray_ui_lang() == "en":
+            return {
+                "title": "Turing Screen",
+                "open": "Open",
+                "configure": "Configure",
+                "exit": "Exit",
+            }
+        return {
+            "title": "Pantalla Turing",
+            "open": "Abrir",
+            "configure": "Configurar",
+            "exit": "Salir",
+        }
+
+    def on_open_tray(tray_icon, item):
+        """Open PantallaTuring launcher without stopping the monitor."""
+        logger.info("Open launcher from tray icon")
+        try:
+            launcher = MAIN_DIRECTORY / "PantallaTuring.exe"
+            if platform.system() == "Windows" and launcher.is_file():
+                subprocess.Popen([str(launcher)], cwd=str(MAIN_DIRECTORY))
+                return
+            # Fallback: classic configure UI without stopping
+            configure_file = next(MAIN_DIRECTORY.glob("configure.py"))
+            subprocess.Popen([sys.executable, str(configure_file)])
+        except Exception as e:
+            logger.error("Could not open launcher: %s", e)
+
     def on_configure_tray(tray_icon, item):
         logger.info("Configure from tray icon")
 
         try:
-            # Load Python file with local python interpreter (useful for venvs)
+            # Classic configure UI (stops monitor so COM port is free)
             configure_file = next(MAIN_DIRECTORY.glob("configure.py"))
             subprocess.Popen([sys.executable, str(configure_file)])
         except:
-            # Load binary (for releases) or Python file with system interpreter
             configure_file = next(MAIN_DIRECTORY.glob("configure*"))
             if platform.system() == "Windows":
                 subprocess.Popen([str(configure_file)], shell=True)
@@ -174,19 +223,28 @@ if __name__ == "__main__":
                 logger.info("Program will now exit")
                 clean_stop()
 
-    # Create a tray icon for the program, with an Exit entry in menu
+    # Create a tray icon for the program (ES/EN labels + Abrir)
     try:
+        _tl = _tray_labels()
+        # Icono de bandeja: el nuevo de Centro Turing; si no estuviera, el antiguo
+        icono = MAIN_DIRECTORY / "res/icons/centro-turing/64.png"
+        if not icono.exists():
+            icono = MAIN_DIRECTORY / "res/icons/monitor-icon-17865/64.png"
         tray_icon = pystray.Icon(
             name='Turing System Monitor',
-            title='Turing System Monitor',
-            icon=Image.open(MAIN_DIRECTORY / "res/icons/monitor-icon-17865/64.png"),
+            title=_tl["title"],
+            icon=Image.open(icono),
             menu=pystray.Menu(
                 pystray.MenuItem(
-                    text='Configure',
+                    text=_tl["open"],
+                    action=on_open_tray,
+                    default=True),
+                pystray.MenuItem(
+                    text=_tl["configure"],
                     action=on_configure_tray),
                 pystray.Menu.SEPARATOR,
                 pystray.MenuItem(
-                    text='Exit',
+                    text=_tl["exit"],
                     action=on_exit_tray)
             )
         )

@@ -275,7 +275,10 @@ if __name__ == "__main__":
         logger.debug("Opening theme preview window with static data")
         viewer = tkinter.Tk()
         viewer.title("Turing SysMon Theme Editor")
-        viewer.iconphoto(True, tkinter.PhotoImage(file=config.MAIN_DIRECTORY / "res/icons/monitor-icon-17865/64.png"))
+        icono = config.MAIN_DIRECTORY / "res/icons/centro-turing/64.png"
+        if not icono.exists():
+            icono = config.MAIN_DIRECTORY / "res/icons/monitor-icon-17865/64.png"
+        viewer.iconphoto(True, tkinter.PhotoImage(file=icono))
         viewer.geometry(str(display_width + 2 * RGB_LED_MARGIN) + "x" + str(display_height + 2 * RGB_LED_MARGIN + 80))
         viewer.protocol("WM_DELETE_WINDOW", on_closing)
         viewer.call('wm', 'attributes', '.', '-topmost', '1')  # Preview window always on top
