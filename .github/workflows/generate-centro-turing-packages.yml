@@ -47,10 +47,20 @@ jobs:
           test -f /opt/centro-turing/main.py
           test -f /opt/centro-turing/config.example.yaml
           test ! -f /opt/centro-turing/config.yaml   # la config personal no se empaqueta
-          python3 -m py_compile /opt/centro-turing/tools/turing_center.py
-          # --status necesita Tkinter y el proyecto, no la pantalla fisica
+          # Sintaxis sin escribir nada en /opt (py_compile crearia __pycache__)
+          python3 - <<'PY'
+          import ast, pathlib
+          for nombre in ("turing_center", "turing_design", "turing_ui2026"):
+              ruta = pathlib.Path(f"/opt/centro-turing/tools/{nombre}.py")
+              ast.parse(ruta.read_text(encoding="utf-8"))
+              print(f"sintaxis OK: {ruta.name}")
+          PY
+          # --status no necesita pantalla fisica; crea config.yaml desde el ejemplo
           /usr/bin/centro-turing --status
+          test -f /opt/centro-turing/config.yaml
           dpkg -s centro-turing | grep -E '^(Package|Version|Architecture|Depends)'
+          # el usuario que lo instalo debe poder escribir en su carpeta (config, log, tmp)
+          test -w /opt/centro-turing
 
       - name: Desinstalar (comprueba que el paquete se va limpio)
         run: |

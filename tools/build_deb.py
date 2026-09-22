@@ -163,6 +163,12 @@ Categories=System;Monitor;
 def postinst() -> bytes:
     return b"""#!/bin/sh
 set -e
+# La aplicacion guarda config.yaml, log.log, tmp/ y screencap.png dentro de su
+# carpeta: si se instala con sudo, el propietario pasa a ser quien lo instalo,
+# para que pueda usarla sin permisos de administrador.
+if [ -n "$SUDO_USER" ] && [ -d /opt/centro-turing ]; then
+  chown -R "$SUDO_USER" /opt/centro-turing 2>/dev/null || true
+fi
 # Refrescar caches del escritorio si las herramientas estan disponibles
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database -q /usr/share/applications || true
