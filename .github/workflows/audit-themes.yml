@@ -30,3 +30,6 @@ jobs:
 
       - name: Desbordamiento de texto en las cajas
         run: python tools/audit-theme-overflow.py
+
+      - name: Texto que choca con una linea del fondo
+        run: python tools/audit-theme-lines.py . --familia ES
