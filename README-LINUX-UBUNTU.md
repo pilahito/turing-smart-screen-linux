@@ -49,14 +49,21 @@ Cambiar tema y reiniciar:
 ./scripts/set-theme.sh LandscapeModernDevice35
 ```
 
-## Centro Turing 3.0 — panel gráfico (nuevo)
+## Centro Turing 3.0 — panel gráfico con interfaz 2026
 
-La misma interfaz gráfica en **Linux y Windows** (Tkinter/ttk, sin dependencias extra):
+La misma interfaz gráfica en **Linux y Windows** (Tkinter + Pillow, sin dependencias extra):
 
 ```bash
 ./scripts/turing-center.sh          # abre el panel gráfico
 ./scripts/turing-center.sh --status # estado en texto, sin GUI
+./scripts/turing-center.sh --mockup tmp/mockups   # imágenes de la interfaz, sin abrir ventana
 ```
+
+Aspecto **2026**: superficies redondeadas con degradado, borde luminoso y sombra; cabecera con
+resplandores; iconos vectoriales; tarjetas de estado con mini-gráficas; control segmentado;
+interruptores animados; deslizador de brillo arrastrable y transiciones deslizantes entre páginas.
+Todo se renderiza con Pillow (`tools/turing_design.py`), así que las imágenes de `--mockup` son
+exactamente el mismo diseño que se ve en la aplicación.
 
 También está en el menú de texto (opción **g**) y, tras `install-desktop-menu.sh`,
 como acceso directo **Centro Turing** en el Escritorio y en el menú de aplicaciones.

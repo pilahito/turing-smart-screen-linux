@@ -10,7 +10,16 @@
   - Ajustes de `config.yaml` (tema, sensores, revisión, puerto, brillo, clima) conservando
     comentarios y orden, con copia `.bak-centro`
   - Registro en vivo, diagnóstico del sistema y arranque automático con un interruptor
-  - `--status` (estado en texto), `--theme NOMBRE` y `--selftest` (auditoría de layout)
+  - `--status` (estado en texto), `--theme NOMBRE`, `--selftest` (auditoría de layout)
+    y `--mockup CARPETA` (genera imágenes de la interfaz sin abrir ventana)
+- **Interfaz 2026** (`tools/turing_design.py` + `tools/turing_ui2026.py`): rediseño visual completo.
+  - Todo se dibuja con Pillow sobre un lienzo único: superficies redondeadas con degradado,
+    borde luminoso y sombra; cabecera con resplandores; tipografía Segoe UI / Roboto
+  - Componentes propios: botones con estados, interruptores animados, control segmentado,
+    chips, deslizador de brillo arrastrable, tarjetas de estado con mini-gráficas y avisos flotantes
+  - Iconos vectoriales dibujados a mano (no dependen de que la tipografía tenga el glifo)
+  - Transición deslizante entre páginas, resaltado al pasar el ratón y desplazamiento con rueda
+  - El mismo motor genera las previsualizaciones, así que el diseño se puede revisar sin abrir la app
 - `scripts/turing-center.sh` — lanzador del panel gráfico para Linux
 - `scripts/install-desktop-menu.sh` — crea ahora también el acceso directo **Centro Turing**
   (GUI, sin terminal) y lo registra en el menú de aplicaciones
