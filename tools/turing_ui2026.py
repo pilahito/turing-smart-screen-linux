@@ -891,6 +891,14 @@ class App(tk.Tk):
         self.scene.image(tag, "restore", restore, x + 432, buttons_y)
         self.scene.hotspot(tag, "restore", x + 432, buttons_y, 180, 44, self._restore_backup)
 
+        # Avanzado: editor del YAML del tema actual (lo que tenia la interfaz antigua)
+        avanzado = self.scene.cached(
+            ("adv_btn", self.scene.hover == "adv"),
+            lambda: D.button("Avanzado: editar el YAML del tema", kind="secondary", width=340, height=44,
+                             state="hover" if self.scene.hover == "adv" else "normal"))
+        self.scene.image(tag, "adv", avanzado, x, buttons_y + 56)
+        self.scene.hotspot(tag, "adv", x, buttons_y + 56, 340, 44, self.act_editar_yaml)
+
     def _campos_ajustes(self, x: int, y: int, ancho_tarjeta: int) -> None:
         """Coloca campos de texto reales encima de los dibujados en el lienzo.
 
@@ -975,6 +983,80 @@ class App(tk.Tk):
             return ok, (f"Guardado y aplicado: {', '.join(cambiados)}" if ok else mensaje)
 
         self.run_bg("Guardando ajustes", task)
+
+    def act_editar_yaml(self) -> None:
+        """Avanzado: editor del YAML del tema actual (como en la interfaz antigua).
+
+        Valida el YAML antes de escribirlo, guarda copia .bak-centro y reinicia el
+        monitor para aplicarlo. No toca el código del programa.
+        """
+        import shutil
+
+        import yaml
+
+        tema = self.config_editor.get("THEME")
+        ruta = core.THEMES_DIR / str(tema) / "theme.yaml"
+        if not ruta.exists():
+            self.notify(f'No encuentro el theme.yaml del tema "{tema}"', error=True)
+            return
+
+        ventana = tk.Toplevel(self)
+        ventana.title(f"Avanzado — {tema}/theme.yaml")
+        ventana.configure(bg=C["bg"])
+        ventana.geometry("880x660")
+        try:
+            ventana.iconphoto(True, tk.PhotoImage(file=core.ROOT / "res/icons/centro-turing/64.png"))
+        except Exception:
+            pass
+        tk.Label(ventana, text="Avanzado: YAML del tema actual. No toca el código del programa.",
+                 bg=C["bg"], fg=C["muted"], font=(self._font_family(), T["small"])).pack(
+            anchor="w", padx=14, pady=(12, 6))
+        marco = tk.Frame(ventana, bg=C["bg"])
+        marco.pack(fill="both", expand=True, padx=14)
+        texto = tk.Text(marco, bg=C["surface_2"], fg=C["text"], insertbackground=C["accent"],
+                        relief="flat", wrap="none", undo=True, font=("Consolas", 10))
+        barra = tk.Scrollbar(marco, command=texto.yview)
+        texto.configure(yscrollcommand=barra.set)
+        barra.pack(side="right", fill="y")
+        texto.pack(fill="both", expand=True)
+        texto.insert("1.0", ruta.read_text(encoding="utf-8", errors="replace"))
+        estado = tk.Label(ventana, text=str(ruta), bg=C["bg"], fg=C["muted"],
+                          font=(self._font_family(), T["small"]))
+        estado.pack(anchor="w", padx=14, pady=(6, 0))
+        fila = tk.Frame(ventana, bg=C["bg"])
+        fila.pack(fill="x", padx=14, pady=12)
+
+        def guardar():
+            contenido = texto.get("1.0", "end-1c")
+            try:
+                datos = yaml.safe_load(contenido)
+                if not isinstance(datos, dict) or "display" not in datos:
+                    raise ValueError("falta la sección display")
+            except Exception as error:  # noqa: BLE001
+                estado.config(text=f"YAML no válido: {error}", fg=C["danger"])
+                return
+            copia = ruta.with_suffix(".yaml.bak-centro")
+            try:
+                shutil.copy2(ruta, copia)
+                ruta.write_text(contenido, encoding="utf-8")
+            except OSError as error:
+                estado.config(text=f"No se pudo guardar: {error}", fg=C["danger"])
+                return
+            estado.config(text=f"Guardado (copia: {copia.name}) — aplicando…", fg=C["ok"])
+            self.run_bg("Aplicando tema", lambda: (self.platform.restart()[0], f"{tema} aplicado"))
+
+        def recargar():
+            texto.delete("1.0", "end")
+            texto.insert("1.0", ruta.read_text(encoding="utf-8", errors="replace"))
+            estado.config(text=str(ruta), fg=C["muted"])
+
+        for etiqueta, accion, color in (("Guardar y aplicar", guardar, C["accent"]),
+                                        ("Recargar del fichero", recargar, C["surface_2"]),
+                                        ("Cerrar", ventana.destroy, C["surface_2"])):
+            tk.Button(fila, text=etiqueta, command=accion, bg=color,
+                      fg=C["bg"] if color == C["accent"] else C["text"], activebackground=color,
+                      relief="flat", font=(self._font_family(), T["small"]),
+                      padx=14, pady=6).pack(side="left", padx=(0, 8))
 
     def _restore_backup(self) -> None:
         if self.config_editor.restore_backup():
