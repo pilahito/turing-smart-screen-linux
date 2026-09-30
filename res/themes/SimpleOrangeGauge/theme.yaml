@@ -44,7 +44,7 @@ static_text:
     FONT_COLOR: 255, 132, 0
     BACKGROUND_IMAGE: background.png
   RAM_USED:
-    TEXT: "USED"
+    TEXT: "USADO"
     X: 27
     Y: 446
     FONT: generale-mono/GeneraleMonoA.ttf
@@ -52,7 +52,7 @@ static_text:
     FONT_COLOR: 255, 132, 0
     BACKGROUND_IMAGE: background.png
   RAM_FREE:
-    TEXT: "FREE"
+    TEXT: "LIBRE"
     X: 27
     Y: 462
     FONT: generale-mono/GeneraleMonoA.ttf

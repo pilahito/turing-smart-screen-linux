@@ -15,7 +15,7 @@ static_images:
     HEIGHT: 480
 static_text:
   DISK_USED_LABEL:
-    TEXT: "Used:"
+    TEXT: "Usado:"
     X: 124
     Y: 411
     FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
@@ -23,7 +23,7 @@ static_text:
     FONT_COLOR: 255, 255, 255
     BACKGROUND_COLOR: 132, 154, 165
   DISK_FREE_LABEL:
-    TEXT: "Free:"
+    TEXT: "Libre:"
     X: 124
     Y: 441
     FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
@@ -209,7 +209,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 155
-        Y: 6
+        Y: 8
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 10
         FONT_COLOR: 255, 255, 255
@@ -220,7 +220,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 250
-        Y: 6
+        Y: 8
         FONT: jetbrains-mono/JetBrainsMono-Bold.ttf
         FONT_SIZE: 10
         FONT_COLOR: 255, 255, 255

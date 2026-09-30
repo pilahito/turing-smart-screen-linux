@@ -482,6 +482,8 @@ class Platform:
 
     # -- arranque y parada -------------------------------------------------------
     def start(self, detached: bool = True) -> tuple[bool, str]:
+        if self.admin_task_ready():
+            return self._start_task()
         python = self.python_exe()
         if not python.exists() and not shutil.which(str(python)):
             return False, "No encuentro Python. Ejecuta la instalacion primero."
@@ -495,6 +497,7 @@ class Platform:
 
         env = os.environ.copy()
         env["PYTHONUNBUFFERED"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
         creation = 0
         if IS_WINDOWS:
             creation = 0x00000008 | 0x08000000  # DETACHED_PROCESS | CREATE_NO_WINDOW
@@ -548,7 +551,67 @@ class Platform:
             return False
         return str(ROOT).replace("\\", "/") in cmdline
 
+    # -- tarea programada con administrador (Windows) ---------------------------
+    # Sin administrador LibreHardwareMonitor no lee la temperatura de la CPU. La
+    # tarea "Centro Turing (admin)" arranca lanzar.py elevado sin pedir UAC; como
+    # el panel no puede cerrar un proceso elevado, hay otra tarea para detenerlo.
+    ADMIN_TASK = "Centro Turing (admin)"
+    ADMIN_STOP_TASK = "Centro Turing (admin) detener"
+
+    def admin_task_ready(self) -> bool:
+        if not IS_WINDOWS:
+            return False
+        return (self._run_code(["schtasks", "/Query", "/TN", self.ADMIN_TASK]) == 0
+                and self._run_code(["schtasks", "/Query", "/TN", self.ADMIN_STOP_TASK]) == 0)
+
+    def _pid_from_file(self) -> int:
+        try:
+            return int(self.pid_file.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            return 0
+
+    def _start_task(self) -> tuple[bool, str]:
+        """Arranca (o reinicia) el monitor elevado mediante la tarea programada."""
+        try:
+            inicio = self.log_file.stat().st_size if self.log_file.exists() else 0
+        except OSError:
+            inicio = 0
+        if self._run_code(["schtasks", "/Run", "/TN", self.ADMIN_TASK]) != 0:
+            return False, "No pude lanzar la tarea programada del monitor"
+        final = time.time() + 100
+        while time.time() < final:
+            time.sleep(1.0)
+            try:
+                with self.log_file.open("r", encoding="utf-8", errors="replace") as handle:
+                    handle.seek(inicio)
+                    nuevo = handle.read()
+            except OSError:
+                nuevo = ""
+            if "--- lanzar start ---" in nuevo and "Starting system monitoring" in nuevo.split(
+                    "--- lanzar start ---")[-1]:
+                pid = self._pid_from_file()
+                return True, f"Monitor iniciado con administrador (PID {pid})"
+            fallo = self.port_error_in_log()
+            if fallo and "--- lanzar start ---" in nuevo and fallo in nuevo:
+                return False, f"El monitor no pudo abrir el puerto: {fallo} " + self.port_error_hint(fallo)
+        return True, "Monitor arrancando con administrador (tarda un poco más de lo normal)"
+
+    def _stop_task(self) -> tuple[bool, str]:
+        pid = self._pid_from_file()
+        if self._run_code(["schtasks", "/Run", "/TN", self.ADMIN_STOP_TASK]) != 0:
+            return False, "No pude lanzar la tarea que detiene el monitor"
+        final = time.time() + 20
+        while time.time() < final:
+            time.sleep(0.5)
+            if not (pid and self._pid_alive(pid)) and not self.monitor_processes():
+                return True, "Monitor detenido"
+        return False, "El monitor no se ha detenido (mira lanzador.log)"
+
     def stop(self) -> tuple[bool, str]:
+        if self.admin_task_ready():
+            ok, message = self._stop_task()
+            if ok:
+                return ok, message
         messages = []
         blocked = False
         if IS_LINUX and self._systemd_available("turing-smart-screen.service"):
@@ -584,6 +647,8 @@ class Platform:
         return True, ("Monitor detenido: " + ", ".join(messages)) if messages else "No habia monitor activo"
 
     def restart(self) -> tuple[bool, str]:
+        if self.admin_task_ready():
+            return self._start_task()  # lanzar.py cierra el monitor anterior y arranca el nuevo
         ok, message = self.stop()
         if not ok:
             return False, message  # no se puede reiniciar lo que no se puede cerrar
@@ -628,6 +693,8 @@ class Platform:
         return Path.home() / ".config" / "autostart" / "turing-smart-screen.desktop"
 
     def autostart_enabled(self) -> bool:
+        if IS_WINDOWS and self.admin_task_ready():
+            return True
         if IS_LINUX:
             unit = self._run(["systemctl", "--user", "is-enabled", "turing-smart-screen.service"]).strip()
             if unit == "enabled":
@@ -646,6 +713,8 @@ class Platform:
                               if enabled else "Arranque automatico desactivado (systemd)")
             return False, "systemctl no pudo cambiar el arranque automatico"
 
+        if IS_WINDOWS:
+            return self._set_admin_autostart(enabled)
         path = self.autostart_path
         if not enabled:
             removed = False
@@ -680,6 +749,32 @@ class Platform:
             path.chmod(0o755)
         return True, f"Arranque automatico activado ({path.name})"
 
+    def _set_admin_autostart(self, enabled: bool) -> tuple[bool, str]:
+        """Windows: arranque con administrador por tarea programada (UAC una sola vez)."""
+        script = ROOT / "tools" / "autoarranque-admin.ps1"
+        if not script.exists():
+            return False, f"No encuentro {script.name}"
+        resultado = ROOT / "tmp" / "autoarranque.txt"
+        try:
+            resultado.unlink()
+        except OSError:
+            pass
+        modo = "-Activar','-Iniciar" if enabled else "-Desactivar"
+        comando = (f"Start-Process -FilePath powershell.exe -Verb RunAs -Wait -WindowStyle Hidden "
+                   f"-ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','\"{script}\"','{modo}'")
+        self._run_code(["powershell", "-NoProfile", "-Command", comando], timeout=180)
+        try:
+            texto = resultado.read_text(encoding="utf-8", errors="replace").strip()
+        except OSError:
+            texto = ""
+        if not texto:
+            return False, "Cancelado: hace falta aceptar el aviso de administrador"
+        if not texto.startswith("OK"):
+            return False, texto
+        if enabled:
+            return True, "Arranque automatico con administrador activado (temperatura de CPU)"
+        return True, "Arranque automatico desactivado"
+
     # -- puertos serie -----------------------------------------------------------
     def serial_ports(self) -> list[str]:
         ports: list[str] = []
@@ -713,7 +808,7 @@ class Platform:
 
     def admin_hint(self) -> str:
         if IS_WINDOWS:
-            return "Para temperaturas reales abre Iniciar-Admin.ps1 (LibreHardwareMonitor)."
+            return ("Temperatura de CPU: activa Arranque automatico en Ajustes " "(tarea con administrador, sin aviso UAC)." if not self.admin_task_ready() else "Monitor con administrador: temperatura de CPU con LibreHardwareMonitor.")
         return "En Linux los sensores los lee Python: instala lm-sensors si faltan datos."
 
     # -- ejecucion de comandos ---------------------------------------------------

@@ -1,4 +1,3 @@
----
 author: "@mathoudebine"
 
 display:
@@ -15,7 +14,7 @@ static_images:
     HEIGHT: 320
 static_text:
   DISK_LABEL:
-    TEXT: "DISK"
+    TEXT: "DISCO"
     X: 420
     Y: 36
     FONT: roboto/Roboto-Bold.ttf
@@ -23,7 +22,7 @@ static_text:
     FONT_COLOR: 16, 223, 239
     BACKGROUND_IMAGE: background.png
   DISK_USED_LABEL:
-    TEXT: "Used:"
+    TEXT: "Usado:"
     X: 350
     Y: 67
     FONT: roboto/Roboto-Regular.ttf

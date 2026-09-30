@@ -2,7 +2,6 @@
 # It is possible to add external sensor sources that come from custom Python code or external modules, and integrate them in an existing theme
 # This file is the theme part to display the custom data, custom data gathering must first be implemented in Python into the sensors_custom.py file
 # Names of the custom sensor classes listed here must be an exact match to class names in sensors_custom.py
----
 display:
   DISPLAY_SIZE: 3.5"
   DISPLAY_ORIENTATION: landscape

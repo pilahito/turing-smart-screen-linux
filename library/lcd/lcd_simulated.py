@@ -20,7 +20,6 @@
 
 import mimetypes
 import os
-import shutil
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from library.lcd.lcd_comm import *
@@ -76,6 +75,17 @@ class LcdSimulated(LcdComm):
         except OSError:
             logger.error("Error starting webserver! An instance might already be running on port %d." % WEBSERVER_PORT)
 
+    def _guardar_pantalla(self):
+        """Guarda screencap.png de forma atomica.
+
+        Antes se hacia screen_image.save("tmp") + shutil.copyfile("tmp", ...), pero
+        la aplicacion crea una CARPETA tmp/, asi que guardar un fichero con ese
+        nombre fallaba con IsADirectoryError al dibujar cualquier imagen.
+        """
+        destino = SCREENSHOT_FILE
+        self.screen_image.save(destino + ".new", "PNG")
+        os.replace(destino + ".new", destino)
+
     def __del__(self):
         self.closeSerial()
 
@@ -113,8 +123,7 @@ class LcdSimulated(LcdComm):
         # Just draw the screen again with the new width/height based on orientation
         with self.update_queue_mutex:
             self.screen_image = Image.new("RGB", (self.get_width(), self.get_height()), (255, 255, 255))
-            self.screen_image.save("tmp", "PNG")
-            shutil.copyfile("tmp", SCREENSHOT_FILE)
+            self._guardar_pantalla()
 
     def DisplayPILImage(
             self,
@@ -145,5 +154,4 @@ class LcdSimulated(LcdComm):
 
         with self.update_queue_mutex:
             self.screen_image.paste(image, (x, y))
-            self.screen_image.save("tmp", "PNG")
-            shutil.copyfile("tmp", SCREENSHOT_FILE)
+            self._guardar_pantalla()

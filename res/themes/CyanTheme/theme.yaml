@@ -104,7 +104,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: 380
-        Y: 249
+        Y: 251
         FONT: roboto-mono/RobotoMono-Medium.ttf
         FONT_SIZE: 18
         FONT_COLOR: 255, 255, 255
@@ -114,7 +114,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: False
         X: 199
-        Y: 249
+        Y: 251
         FONT: roboto-mono/RobotoMono-Medium.ttf
         FONT_SIZE: 18
         FONT_COLOR: 255, 255, 255
@@ -124,7 +124,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: False
         X: 96
-        Y: 249
+        Y: 251
         FONT: roboto-mono/RobotoMono-Medium.ttf
         FONT_SIZE: 18
         FONT_COLOR: 255, 255, 255

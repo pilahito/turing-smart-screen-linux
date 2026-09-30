@@ -610,7 +610,7 @@ class App(tk.Tk):
             ("hero", width), lambda: D.hero_backdrop((width, D.HEADER_H))), 0, 0)
         self.scene.image("shell", "mark", self.scene.cached(("mark",), lambda: D.brand_mark(42)), SP["xl"], 24)
         self.scene.text("shell", SP["xl"] + 58, 22, f"{APP_NAME} {VERSION}", size=T["h1"], weight="bold")
-        self.scene.text("shell", SP["xl"] + 59, 50, "Panel de la mini pantalla USB · Windows y Linux",
+        self.scene.text("shell", SP["xl"] + 59, 54, "Panel de la mini pantalla USB · Windows y Linux",
                         size=T["small"], color=C["muted"])
         running, detail = self.status
         status_chip = self.scene.cached(
@@ -689,7 +689,7 @@ class App(tk.Tk):
 
     def _sync_search_entry(self, content_x: int, content_y: int, content_w: int) -> None:
         if self.page == "temas":
-            self.search_entry.place(x=content_x + content_w - 260 + SP["md"], y=content_y + 118 + 6,
+            self.search_entry.place(x=content_x + content_w - 260 + SP["md"], y=content_y + 66 + 6,
                                     width=260 - SP["md"] * 2 - 24, height=22)
             self.search_shown = True
         else:
@@ -699,7 +699,12 @@ class App(tk.Tk):
     # -- páginas ------------------------------------------------------------------
     def _title(self, tag: str, x: int, y: int, title: str, subtitle: str) -> None:
         self.scene.text(tag, x, y, title, size=T["display"], weight="bold")
-        self.scene.text(tag, x + 2, y + 40, subtitle, size=T["small"], color=C["muted"])
+        self.scene.text(tag, x + 2, y + 46, subtitle, size=T["small"], color=C["muted"])
+
+    def _sensores_detalle(self) -> str:
+        if not core.IS_WINDOWS:
+            return "sensores de Python"
+        return "con admin: temp. CPU" if self.autostart else "sin admin: sin temp. CPU"
 
     def _page_panel(self, x: int, y: int, width: int, height: int, pressed: str) -> None:
         tag, top = "current_page", y + 66
@@ -712,12 +717,12 @@ class App(tk.Tk):
             ("Puerto", self.config_editor.get("COM_PORT") or "AUTO",
              f"{self.config_editor.get('REVISION') or 'A'} · {self.platform.name}", C["accent"], None),
             ("Brillo", f"{int(self.brightness * 100)}%", theme_name, C["warn"], self._spark["ram"]),
-            ("Sensores", self.config_editor.get("HW_SENSORS") or "AUTO", self.platform.admin_hint()[:26],
+            ("Sensores", self.config_editor.get("HW_SENSORS") or "AUTO", self._sensores_detalle(),
              C["accent_2"], None),
         ]
         tile_w = (width - SP["md"] * 3) // 4
         for index, (label, value, sub, accent, spark) in enumerate(tiles):
-            image = self.scene.cached(("tile", label, value, sub, accent, bool(spark)),
+            image = self.scene.cached(("tile", label, value, sub, accent, bool(spark), tile_w),
                                       lambda: D.stat_tile(label, value, sub=sub, accent=accent, spark=spark,
                                                           width=tile_w, height=132))
             self.scene.image(tag, f"tile{index}", image, x + index * (tile_w + SP["md"]), top)
@@ -739,7 +744,7 @@ class App(tk.Tk):
                                              "ok"), (f"{len(self.themes)} temas", "neutral")]))
         self.scene.image(tag, "preview", preview, x, top + 148)
         controls = self.scene.cached(
-            ("controls", theme_name, int(self.brightness * 100), running, card_h),
+            ("controls", theme_name, int(self.brightness * 100), running, card_h, control_w),
             lambda: D.control_card(width=control_w, height=card_h,
                                    brightness=self.brightness, theme_name=theme_name, running=running))
         control_x = x + preview_w + SP["lg"]
@@ -780,8 +785,9 @@ class App(tk.Tk):
         themes = self._filtered()
         list_x, list_y = x, y + 118
         list_w = int((width - SP["lg"]) * 0.52)
-        list_h = height - 200
+        list_h = height - 170
         rows_visible = max(1, list_h // LIST_ROW_H)
+        list_h = rows_visible * LIST_ROW_H
         self.list_offset = max(0, min(self.list_offset, max(0, len(themes) - rows_visible)))
         self.theme_index = max(0, min(self.theme_index, max(0, len(themes) - 1)))
         viewport = Image.new("RGBA", (list_w, list_h), (0, 0, 0, 0))
@@ -823,7 +829,7 @@ class App(tk.Tk):
         self.scene.image(tag, "apply", apply_button, list_x + list_w + SP["lg"], button_y)
         self.scene.hotspot(tag, "apply", list_x + list_w + SP["lg"], button_y, preview_w, 44, self.act_apply)
         # Fila inferior: abrir carpeta + crear temas (aleatorio / IA) + YAML avanzado
-        fila_y = y + 74 + list_h + SP["sm"]
+        fila_y = list_y + list_h + SP["sm"]
         botones = (
             ("folder", "Abrir carpeta", 158,
              lambda: self.act_open(theme.path if theme else THEMES_DIR)),
@@ -843,7 +849,7 @@ class App(tk.Tk):
 
     def _search_field(self, tag: str, x: int, y: int, width: int) -> None:
         field_w, field_h = 260, 34
-        field_x, field_y = x + width - field_w, y + 118
+        field_x, field_y = x + width - field_w, y + 66
         field = self.scene.cached(("search_field", self.scene.hover == "search"),
                                   lambda: D.surface((field_w, field_h), radius=R["input"],
                                                     fill=C["surface_2"], border=C["border_hi"]))

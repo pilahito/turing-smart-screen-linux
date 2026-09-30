@@ -144,6 +144,38 @@ def set_config(theme: str) -> None:
 
 
 ARRANQUE_PAUSA = 5.0     # s de pausa con --arranque (inicio de Windows)
+_MUTEX = None
+
+
+def _un_solo_lanzador(espera_s: float) -> bool:
+    """Evita dos lanzadores a la vez (p. ej. tarea de inicio + carpeta Inicio).
+
+    Mutex con nombre de Windows. Con espera 0 (arranque de sesion) el segundo
+    lanzador se retira; al aplicar un tema se espera a que termine el anterior.
+    """
+    global _MUTEX
+    if not WIN:
+        return True
+    try:
+        import ctypes
+
+        k32 = ctypes.windll.kernel32
+        k32.CreateMutexW.restype = ctypes.c_void_p
+        _MUTEX = k32.CreateMutexW(None, False, "Local\\CentroTuringLanzar")
+        r = k32.WaitForSingleObject(ctypes.c_void_p(_MUTEX), int(espera_s * 1000))
+        return r in (0, 0x80)  # WAIT_OBJECT_0 / WAIT_ABANDONED
+    except Exception:
+        return True
+
+
+def _arranque_de_sesion() -> bool:
+    """True si Windows acaba de arrancar (la tarea de inicio de sesion)."""
+    try:
+        import psutil
+
+        return time.time() - psutil.boot_time() < 240
+    except Exception:
+        return False
 ESPERA_MONITOR = 90.0    # s maximos esperando a que main.py empiece a dibujar
 
 
@@ -172,6 +204,17 @@ def main() -> int:
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
     theme = args[0].strip() if args else ""
     log("lanzar os=%s theme=%r %s" % (sys.platform, theme, " ".join(flags)))
+    if "--detener" in flags:
+        # Lo usa la tarea "Centro Turing (admin) detener": el panel (sin admin) no
+        # puede cerrar un monitor que corre como administrador.
+        kill_previous()
+        log("monitor detenido (--detener)")
+        return 0
+    if "--tarea" in flags and _arranque_de_sesion():
+        flags.append("--arranque")
+    if not _un_solo_lanzador(0 if "--arranque" in flags else 100):
+        log("ya hay otro lanzador en marcha: este se retira (evita dos monitores)")
+        return 0
     if "--arranque" in flags:
         # Arranque de Windows: pequena pausa para que se enumeren los USB
         time.sleep(ARRANQUE_PAUSA)
@@ -189,7 +232,10 @@ def main() -> int:
             set_config("")
         py = python_exe()
         ensure_tmp()
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"  # prints de main.py en UTF-8 (sin "Â°C")
         kwargs = {
+            "env": env,
             "cwd": str(ROOT),
             "stdout": subprocess.DEVNULL,
             "stderr": subprocess.DEVNULL,

@@ -29,7 +29,7 @@ locale.setlocale(locale.LC_ALL, '')
 logging.basicConfig(  # format='%(asctime)s [%(levelname)s] %(message)s in %(pathname)s:%(lineno)d',
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        RotatingFileHandler("log.log", maxBytes=1000000, backupCount=0),  # Log in textfile max 1MB
+        RotatingFileHandler("log.log", maxBytes=1000000, backupCount=0, encoding="utf-8"),  # Log in textfile max 1MB
         logging.StreamHandler()  # Log also in console
     ],
     datefmt='%x %X')

@@ -43,7 +43,7 @@ STATS:
         SHOW: True
         SHOW_UNIT: True
         X: 100
-        Y: 91
+        Y: 100
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 13
         FONT_COLOR: 200, 200, 200
@@ -55,7 +55,7 @@ STATS:
           SHOW: True
           SHOW_UNIT: True
           X: 110
-          Y: 110
+          Y: 118
           FONT: roboto/Roboto-Bold.ttf
           FONT_SIZE: 13
           FONT_COLOR: 200, 200, 200
@@ -65,7 +65,7 @@ STATS:
           SHOW: TRUE
           SHOW_UNIT: True
           X: 183
-          Y: 110
+          Y: 118
           FONT: roboto/Roboto-Bold.ttf
           FONT_SIZE: 13
           FONT_COLOR: 200, 200, 200
@@ -75,7 +75,7 @@ STATS:
           SHOW: TRUE
           SHOW_UNIT: True
           X: 265
-          Y: 110
+          Y: 118
           FONT: roboto/Roboto-Bold.ttf
           FONT_SIZE: 13
           FONT_COLOR: 200, 200, 200
@@ -111,7 +111,7 @@ STATS:
         SHOW: TRUE
         SHOW_UNIT: True
         X: 115
-        Y: 235
+        Y: 243
         FONT: roboto/Roboto-Bold.ttf
         FONT_SIZE: 13
         FONT_COLOR: 200, 200, 200

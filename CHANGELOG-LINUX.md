@@ -1,5 +1,27 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.1.0-linux-ubuntu] - 2026-09-30
+
+Centro Turing 3.1.1 (Windows) - temperatura de CPU con administrador y arreglos del panel.
+
+### Nuevo
+- **Arranque con administrador sin aviso UAC**: tarea programada "Centro Turing (admin)"
+  (al iniciar sesion, `lanzar.py --tarea`) y "Centro Turing (admin) detener".
+  LibreHardwareMonitor ya lee la temperatura de la CPU. Se activa con el interruptor
+  "Arranque automatico" de Ajustes o con `Arreglar-Temperatura-CPU.ps1`
+  (`tools/autoarranque-admin.ps1`). Desactiva el arranque antiguo de la carpeta Inicio.
+- El panel arranca, detiene y reinicia el monitor elevado a traves de esas tareas.
+- `lanzar.py`: un solo lanzador a la vez (evita dos monitores al iniciar sesion) y
+  `--detener`.
+
+### Corregido
+- `log.log` y la salida del monitor se escriben en UTF-8 (adios a "Â°C").
+- Panel: las tarjetas de estado se quedaban estrechas tras redimensionar.
+- Temas: la busqueda quedaba tapada por la vista previa y los botones pisaban la
+  ultima fila de la lista; titulos y subtitulos ya no se solapan.
+- Simulador: captura guardada de forma atomica.
+- Temas incluidos: textos en espanol (Usado/Libre/Disco) y posiciones ajustadas.
+
 ## [1.0.9-linux-ubuntu] - 2026-09-30
 
 Centro Turing **3.1.1** (Windows): arranque, apagado y temas horizontales.
