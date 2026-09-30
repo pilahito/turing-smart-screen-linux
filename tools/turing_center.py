@@ -41,7 +41,7 @@ from pathlib import Path
 # Constantes
 # --------------------------------------------------------------------------------------
 APP_NAME = "Centro Turing"
-VERSION = "3.1.0"
+VERSION = "3.1.1"
 REPO_URL = "https://github.com/pilahito/turing-smart-screen-linux"
 UPSTREAM_URL = "https://github.com/mathoudebine/turing-smart-screen-python"
 
@@ -72,6 +72,15 @@ def _resolve_root() -> Path:
 ROOT = _resolve_root()
 CONFIG_FILE = ROOT / "config.yaml"
 THEMES_DIR = ROOT / "res" / "themes"
+
+# Descripciones en espanol que se muestran en la pagina Tema (lista y vista previa).
+# Un tema tambien puede traer su propia clave "description:" en el theme.yaml.
+THEME_DESCRIPTIONS = {
+    "AyistaxNeon_H": "Neón rojo Ayistax · rejilla hex",
+    "SynthwaveES_H": "Synthwave retro · sol y rejilla",
+    "MatrixES_H": "Terminal verde Matrix",
+    "MinimalOscuro_H": "Minimal oscuro · reloj grande",
+}
 STATE_FILE = ROOT / "tmp" / "centro-ui.json"
 
 IS_WINDOWS = os.name == "nt"
@@ -449,6 +458,28 @@ class Platform:
                 return linea.split("]", 1)[-1].strip()
         return ""
 
+    @staticmethod
+    def port_error_hint(mensaje: str) -> str:
+        """Explica el fallo segun la causa real que informa el sistema.
+
+        Conviene no confundir los dos casos que devuelve pyserial:
+        - PermissionError / "Acceso denegado": el puerto existe, pero otro programa lo tiene abierto.
+        - FileNotFoundError / "no puede encontrar el archivo": el puerto NO existe en el sistema,
+          casi siempre porque la pantalla no esta conectada o Windows no la reconoce.
+        """
+        texto = (mensaje or "").lower()
+        if "permissionerror" in texto or "acceso denegado" in texto or "access is denied" in texto:
+            return ("El puerto esta ocupado por otro programa: suele ser otra copia del monitor "
+                    "(o un terminal serie) usandolo. Pulsa Detener y vuelve a intentarlo.")
+        if ("filenotfounderror" in texto or "no puede encontrar el archivo" in texto
+                or "cannot find the file" in texto):
+            return ("Ese puerto no existe en el sistema: la pantalla no esta conectada o Windows no la "
+                    "reconoce. Revisa el cable y el puerto USB (mejor directo a la placa, sin hub) y "
+                    "comprueba que aparece en el Administrador de dispositivos (Puertos COM y LPT). "
+                    "Si aparece con otro numero (COM4, COM5...), cambialo en la configuracion. "
+                    "Despues pulsa Detener y vuelve a intentarlo.")
+        return "Pulsa Detener y vuelve a intentarlo."
+
     # -- arranque y parada -------------------------------------------------------
     def start(self, detached: bool = True) -> tuple[bool, str]:
         python = self.python_exe()
@@ -490,8 +521,7 @@ class Platform:
             fallo_puerto = self.port_error_in_log()
             if fallo_puerto:
                 return False, (f"El monitor no pudo abrir el puerto: {fallo_puerto} "
-                               "Suele ser otra copia del monitor (o un terminal serie) usandolo. "
-                               "Pulsa Detener y vuelve a intentarlo.")
+                               + self.port_error_hint(fallo_puerto))
             return False, "El monitor se cerro al arrancar. Revisa el registro."
         return True, f"Monitor iniciado (PID {proc.pid})"
 
@@ -632,7 +662,7 @@ class Platform:
             content = (
                 "@echo off\r\n"
                 "rem Arranque automatico creado por Centro Turing 3.0\r\n"
-                f'start "" /min "{python}" "{launcher}"\r\n'
+                f'start "" /min "{python}" "{launcher}" --arranque\r\n'
             )
             path.write_text(content, encoding="utf-8")
         else:
@@ -819,6 +849,15 @@ class ThemeInfo:
     @property
     def is_landscape(self) -> bool:
         return self.orientation == "landscape" or (self.width >= self.height > 0)
+
+    @property
+    def description(self) -> str:
+        meta = self.meta if isinstance(self.meta, dict) else {}
+        return THEME_DESCRIPTIONS.get(self.name) or str(meta.get("description") or "")
+
+    @property
+    def desc_suffix(self) -> str:
+        return f" · {self.description}" if self.description else ""
 
     @property
     def label(self) -> str:

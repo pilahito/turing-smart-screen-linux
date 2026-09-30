@@ -30,6 +30,7 @@ a = Analysis(
     hiddenimports=[
         'turing_design',
         'turing_ui2026',
+        'generador_temas',
         'PIL._imagingtk',
         'PIL._tkinter_finder',
         'serial.tools.list_ports',

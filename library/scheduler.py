@@ -195,7 +195,14 @@ def QueueHandler():
             f, args = config.update_queue.get()
             f(*args)
     else:
-        # Execute first action in the queue
+        # Drenar todos los elementos pendientes seguidos, sin las esperas de 1 ms
+        # entre trozos (en Windows time.sleep(0.001) tarda ~15 ms por el reloj del
+        # sistema, lo que ralentizaba el envio de imagenes a la pantalla).
+        while not config.update_queue.empty():
+            f, args = config.update_queue.get()
+            if f:
+                f(*args)
+        # Bloquear esperando el siguiente elemento de la cola
         f, args = config.update_queue.get()
         if f:
             f(*args)

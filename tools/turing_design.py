@@ -32,21 +32,21 @@ ROOT = _base_dir()
 # Tokens
 # --------------------------------------------------------------------------------------
 C = {
-    "bg": "#07090f",
-    "bg_soft": "#0b0e16",
-    "surface": "#12161f",
-    "surface_2": "#171c27",
-    "surface_3": "#1e2431",
-    "border": "#232a38",
-    "border_hi": "#303849",
-    "text": "#e9eef7",
-    "muted": "#9aa6bd",
-    "faint": "#6b7688",
-    "accent": "#22d3ee",
-    "accent_2": "#7c5cff",
-    "ok": "#34d399",
-    "warn": "#fbbf24",
-    "danger": "#fb7185",
+    "bg": "#06080e",
+    "bg_soft": "#0a0d15",
+    "surface": "#11151e",
+    "surface_2": "#161b26",
+    "surface_3": "#1d2330",
+    "border": "#252d3d",
+    "border_hi": "#34415a",
+    "text": "#eef2fa",
+    "muted": "#a7b2c8",
+    "faint": "#7e8a9e",
+    "accent": "#35daf2",
+    "accent_2": "#917aff",
+    "ok": "#36dca0",
+    "warn": "#fdc24b",
+    "danger": "#fb748b",
     "on_dark": "#04121a",
 }
 
@@ -59,8 +59,8 @@ T = {
     "h1": 21,
     "h2": 15,
     "body": 13,
-    "small": 11,
-    "tiny": 10,
+    "small": 12,
+    "tiny": 11,
 }
 
 SIDEBAR_W = 224

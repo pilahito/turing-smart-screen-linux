@@ -89,7 +89,90 @@ class LcdComm(ABC):
         else:
             return self.display_width
 
-    def openSerial(self):
+    def _espera_puerto_segundos(self) -> float:
+        # config.yaml -> config: COM_WAIT_SECONDS (por defecto 60 s)
+        try:
+            from library import config as _cfg
+            return max(0.0, float(_cfg.CONFIG_DATA.get("config", {}).get("COM_WAIT_SECONDS", 60)))
+        except Exception:
+            return 60.0
+
+    def _esperar_puerto(self) -> None:
+        """Al arrancar Windows el USB-serie de la pantalla puede tardar en aparecer.
+
+        Espera (sondeo cada 2 s, hasta COM_WAIT_SECONDS) a que exista el puerto de
+        config.yaml o a que se detecte la pantalla por VID/PID o numero de serie
+        (si Windows le ha dado otro nombre, se usa ese).
+        """
+        try:
+            from serial.tools.list_ports import comports
+        except Exception:
+            return
+        espera = self._espera_puerto_segundos()
+        self._limite_puerto = time.monotonic() + espera
+        inicio = time.monotonic()
+        avisado = False
+        while True:
+            try:
+                presentes = {str(p.device).upper() for p in comports()}
+            except Exception:
+                presentes = set()
+            if self.com_port != 'AUTO' and str(self.com_port).upper() in presentes:
+                break
+            try:
+                detectado = self.auto_detect_com_port()
+            except Exception:
+                detectado = None
+            if detectado:
+                if self.com_port != 'AUTO' and str(detectado).upper() != str(self.com_port).upper():
+                    logger.warning(f"El puerto {self.com_port} no existe: la pantalla esta en {detectado}, "
+                                   "se usa ese puerto")
+                    self.com_port = detectado
+                break
+            if time.monotonic() >= self._limite_puerto:
+                logger.error(f"La pantalla no ha aparecido tras esperar {espera:.0f} s (puerto {self.com_port})")
+                return
+            if not avisado:
+                logger.warning(f"Esperando a que Windows detecte la pantalla ({self.com_port}): "
+                               f"reintento cada 2 s durante {espera:.0f} s como maximo")
+                avisado = True
+            time.sleep(2)
+        if avisado:
+            logger.info(f"Pantalla detectada en {self.com_port} tras {time.monotonic() - inicio:.0f} s")
+
+    def _abrir_serie_con_reintentos(self):
+        """Abre el puerto; si aun no esta listo (recien enumerado) reintenta cada 2 s."""
+        limite_ocupado = time.monotonic() + 10
+        aviso = False
+        while True:
+            try:
+                return serial.Serial(self.com_port, 115200, timeout=1, rtscts=True)
+            except Exception as e:
+                causa = str(e).lower()
+                no_existe = ("filenotfounderror" in causa or "no puede encontrar el archivo" in causa
+                             or "cannot find the file" in causa)
+                ocupado = ("permissionerror" in causa or "acceso denegado" in causa
+                           or "access is denied" in causa)
+                ahora = time.monotonic()
+                if (no_existe and ahora < getattr(self, "_limite_puerto", 0)) or \
+                        (ocupado and ahora < min(limite_ocupado, getattr(self, "_limite_puerto", 0) + 10)):
+                    if not aviso:
+                        logger.warning(f"No se puede abrir {self.com_port} todavia ({e}): reintentando cada 2 s")
+                        aviso = True
+                    time.sleep(2)
+                    if no_existe:
+                        try:
+                            detectado = self.auto_detect_com_port()
+                            if detectado:
+                                self.com_port = detectado
+                        except Exception:
+                            pass
+                    continue
+                raise
+
+    def openSerial(self, _reintento: bool = False):
+        if not _reintento:
+            self._esperar_puerto()
         if self.com_port == 'AUTO':
             self.com_port = self.auto_detect_com_port()
             if not self.com_port:
@@ -105,9 +188,28 @@ class LcdComm(ABC):
             logger.debug(f"Static COM port: {self.com_port}")
 
         try:
-            self.lcd_serial = serial.Serial(self.com_port, 115200, timeout=1, rtscts=True)
+            self.lcd_serial = self._abrir_serie_con_reintentos()
         except Exception as e:
             logger.error(f"Cannot open COM port {self.com_port}: {e}")
+            causa = str(e).lower()
+            if ("filenotfounderror" in causa or "no puede encontrar el archivo" in causa
+                    or "cannot find the file" in causa):
+                # Windows renumera los puertos USB al reconectar la pantalla: si el
+                # puerto guardado en config.yaml ya no existe, se busca la pantalla
+                # (VID_1A86/PID_5722, numero de serie USB35INCHIPSV2) antes de rendirse.
+                if not _reintento:
+                    detectado = self.auto_detect_com_port()
+                    if detectado and detectado != self.com_port:
+                        logger.warning(f"El puerto {self.com_port} ya no existe: la pantalla esta en "
+                                       f"{detectado}, se usa ese puerto")
+                        self.com_port = detectado
+                        return self.openSerial(_reintento=True)
+                logger.error(f"El puerto {self.com_port} no existe en el sistema: "
+                             "la pantalla no esta conectada o Windows no la reconoce")
+            elif ("permissionerror" in causa or "acceso denegado" in causa
+                    or "access is denied" in causa):
+                logger.error(f"El puerto {self.com_port} esta ocupado por otro programa: "
+                             "cierra el monitor o el terminal serie que lo use")
             try:
                 sys.exit(0)
             except:

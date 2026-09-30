@@ -94,9 +94,17 @@ if __name__ == "__main__":
 
         logger.debug("(Waited %.1fs)" % wait_time)
 
-    def clean_stop(tray_icon=None):
-        # Turn screen and LEDs off before stopping
-        display.turn_off()
+    def clean_stop(tray_icon=None, motivo="salida del programa"):
+        # Turn screen and LEDs off before stopping (Centro Turing: brillo 0 + SCREEN_OFF y se
+        # espera a que los comandos se hayan escrito de verdad en el puerto)
+        try:
+            import library.apagado_windows as apagado_windows
+            if apagado_windows._display is not None:
+                apagado_windows.apagar_pantalla(motivo)
+            else:
+                display.turn_off()
+        except Exception:
+            display.turn_off()
 
         # Do not stop the program now in case data transmission was in progress
         # Instead, ask the scheduler to empty the action queue before stopping
@@ -218,10 +226,14 @@ if __name__ == "__main__":
                     # Some models have troubles displaying back the previous bitmap after being turned off/on
                     display.display_static_images()
                     display.display_static_text()
+            elif msg == win32con.WM_QUERYENDSESSION:
+                # Windows se apaga / cierra sesion: apagar pantalla y dejar seguir el apagado
+                clean_stop(motivo="WM_QUERYENDSESSION (apagado / cierre de sesion)")
+                return True
             else:
                 # For any other events, the program will stop
                 logger.info("Program will now exit")
-                clean_stop()
+                clean_stop(motivo="mensaje de Windows %s" % msg)
 
     # Create a tray icon for the program (ES/EN labels + Abrir)
     try:
@@ -274,6 +286,13 @@ if __name__ == "__main__":
     # Start serial queue handler
     scheduler.QueueHandler()
 
+    # Centro Turing: al apagar / reiniciar / cerrar sesion en Windows, brillo 0 + pantalla apagada
+    try:
+        import library.apagado_windows as apagado_windows
+        apagado_windows.instalar(display, scheduler)
+    except Exception as _e:
+        logger.error("No se pudo activar el apagado de pantalla con Windows: %s" % _e)
+
     # Create all static images
     display.display_static_images()
 
@@ -287,21 +306,21 @@ if __name__ == "__main__":
     logger.info("Starting system monitoring")
     import library.stats as stats
 
-    scheduler.CPUPercentage(); time.sleep(0.25)
-    scheduler.CPUFrequency(); time.sleep(0.25)
-    scheduler.CPULoad(); time.sleep(0.25)
-    scheduler.CPUTemperature(); time.sleep(0.25)
-    scheduler.CPUFanSpeed(); time.sleep(0.25)
+    scheduler.CPUPercentage(); time.sleep(0.05)
+    scheduler.CPUFrequency(); time.sleep(0.05)
+    scheduler.CPULoad(); time.sleep(0.05)
+    scheduler.CPUTemperature(); time.sleep(0.05)
+    scheduler.CPUFanSpeed(); time.sleep(0.05)
     if stats.Gpu.is_available():
-        scheduler.GpuStats(); time.sleep(0.25)
-    scheduler.MemoryStats(); time.sleep(0.25)
-    scheduler.DiskStats(); time.sleep(0.25)
-    scheduler.NetStats(); time.sleep(0.25)
-    scheduler.DateStats(); time.sleep(0.25)
-    scheduler.SystemUptimeStats(); time.sleep(0.25)
-    scheduler.CustomStats(); time.sleep(0.25)
-    scheduler.WeatherStats(); time.sleep(0.25)
-    scheduler.PingStats(); time.sleep(0.25)
+        scheduler.GpuStats(); time.sleep(0.05)
+    scheduler.MemoryStats(); time.sleep(0.05)
+    scheduler.DiskStats(); time.sleep(0.05)
+    scheduler.NetStats(); time.sleep(0.05)
+    scheduler.DateStats(); time.sleep(0.05)
+    scheduler.SystemUptimeStats(); time.sleep(0.05)
+    scheduler.CustomStats(); time.sleep(0.05)
+    scheduler.WeatherStats(); time.sleep(0.05)
+    scheduler.PingStats(); time.sleep(0.05)
 
     # OS-specific tasks
     if tray_icon and platform.system() == "Darwin":  # macOS-specific

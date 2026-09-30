@@ -1,5 +1,36 @@
 # Changelog — Linux / Ubuntu (pilahito)
 
+## [1.0.9-linux-ubuntu] - 2026-09-30
+
+Centro Turing **3.1.1** (Windows): arranque, apagado y temas horizontales.
+
+### Nuevo
+- **4 temas horizontales 480x320** para la 3.5": `AyistaxNeon_H`, `SynthwaveES_H`,
+  `MatrixES_H` y `MinimalOscuro_H` (generados con `tools/crear_temas_2026.py`,
+  vista previa sin pantalla con `tools/render_sandbox.py`). La página Tema muestra
+  una descripción de cada uno.
+- **Espera al puerto COM al arrancar** (`lcd_comm.py`): hasta 60 s (`COM_WAIT_SECONDS`)
+  y detección automática de la pantalla por VID/PID (1A86:5722) si cambia de número.
+- **`tools/lanzar.py`**: lanzador único (`--arranque` para el inicio de Windows) que
+  cierra solo el monitor de esta carpeta, espera a "Starting system monitoring" y
+  avisa con un mensaje corto si falla.
+- **Pantalla apagada al apagar/reiniciar Windows** (`library/apagado_windows.py`):
+  ventana oculta que atiende `WM_QUERYENDSESSION`, brillo 0 + `SCREEN_OFF`
+  confirmados antes de salir. Script de apagado opcional por directiva de grupo:
+  `tools/apagar-pantalla-apagado.cmd` / `tools/apagar_pantalla.py`.
+
+### Corregido
+- El generador de temas (aleatorio / IA) y `Arreglar-Temperatura-CPU.ps1` mataban
+  **cualquier** proceso Python con `main.py` (también otros programas).
+- En el `.exe`, el generador de temas buscaba `res/themes` en la carpeta temporal de
+  PyInstaller.
+- Una tarea que terminaba con `SystemExit` dejaba el panel en "Hay una tarea en curso".
+- Botón "sensores avanzados (UAC)": faltaba cerrar una comilla en el comando.
+- `Iniciar-Admin.ps1` buscaba la ruta antigua y dejaba dos monitores peleando por el COM.
+- Los scripts ya no reescriben `config.yaml` con BOM.
+- `elegir-tema.py` / `Cambiar-Tema.ps1`: temas `_H` y lectura de `THEME` con sangría.
+- Envío a la pantalla más rápido (cola drenada sin esperas de 1 ms).
+
 ## [1.0.8-linux-ubuntu] - 2026-09-22
 
 Versión **estable**: paquetes instalables, correcciones de librería y la suite de

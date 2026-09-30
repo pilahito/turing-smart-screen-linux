@@ -289,7 +289,9 @@ class App(tk.Tk):
         def worker():
             try:
                 result = task()
-            except Exception as error:  # pragma: no cover - defensivo
+            except BaseException as error:  # noqa: BLE001 - SystemExit del generador incluido
+                # Antes solo se capturaba Exception: un SystemExit (p. ej. el generador sin
+                # plantillas) mataba el hilo y el panel se quedaba "Hay una tarea en curso".
                 result = (False, f"Error: {error}")
             # La cola la lee el hilo de la interfaz: Tkinter no admite llamarlo desde
             # otro hilo (after() desde el hilo de trabajo puede fallar en silencio).
@@ -530,7 +532,7 @@ class App(tk.Tk):
         if key == "admin":
             powershell = "powershell"
             command = (f'Start-Process -FilePath "{self.platform.python_exe()}" '
-                       f'-ArgumentList \'"{core.ROOT / "tools" / "lanzar.py"}\' -Verb RunAs')
+                       f'-ArgumentList \'"{core.ROOT / "tools" / "lanzar.py"}"\' -Verb RunAs')
             self.run_bg("Permisos", lambda: (
                 self.platform._run_code([powershell, "-NoProfile", "-Command", command], timeout=60) == 0,
                 "Ventana de administrador lanzada"))
@@ -793,7 +795,7 @@ class App(tk.Tk):
             row = self.scene.cached(
                 ("row", theme.name, selected, hover),
                 lambda t=theme, s=selected, h=hover: D.list_row(
-                    t.name, detail=f"{t.size or '—'} · {'horizontal' if t.is_landscape else 'vertical'}",
+                    t.name, detail=f"{t.size or '—'} · {'horizontal' if t.is_landscape else 'vertical'}{t.desc_suffix}",
                     active=s, hover=h, width=list_w, height=LIST_ROW_H - 4))
             viewport.alpha_composite(row, (0, index * LIST_ROW_H))
             self.scene.hotspot(tag, f"row:{position}", list_x, list_y + index * LIST_ROW_H,
@@ -806,7 +808,8 @@ class App(tk.Tk):
             ("theme_preview", theme.name if theme else "", preview_w),
             lambda: D.theme_preview(theme.background if theme else None, theme.name if theme else "—",
                                     f"{theme.resolution if theme else '?'} · "
-                                    f"{'horizontal' if theme and theme.is_landscape else 'vertical'}",
+                                    f"{'horizontal' if theme and theme.is_landscape else 'vertical'}"
+                                    f"{theme.desc_suffix if theme else ''}",
                                     width=preview_w, height=min(400, list_h - 90),
                                     badges=[(theme.size or "medida", "accent"),
                                             ("horizontal" if theme and theme.is_landscape else "vertical", "ok")]))
@@ -819,11 +822,24 @@ class App(tk.Tk):
         button_y = list_y + preview.height + SP["md"]
         self.scene.image(tag, "apply", apply_button, list_x + list_w + SP["lg"], button_y)
         self.scene.hotspot(tag, "apply", list_x + list_w + SP["lg"], button_y, preview_w, 44, self.act_apply)
-        folder = self.scene.cached(("folder_btn",),
-                                   lambda: D.button("Abrir carpeta", kind="secondary", width=160, height=34))
-        self.scene.image(tag, "folder", folder, x, y + 74 + list_h + SP["sm"])
-        self.scene.hotspot(tag, "folder", x, y + 74 + list_h + SP["sm"], 160, 34,
-                           lambda: self.act_open(theme.path if theme else THEMES_DIR))
+        # Fila inferior: abrir carpeta + crear temas (aleatorio / IA) + YAML avanzado
+        fila_y = y + 74 + list_h + SP["sm"]
+        botones = (
+            ("folder", "Abrir carpeta", 158,
+             lambda: self.act_open(theme.path if theme else THEMES_DIR)),
+            ("tema_rnd", "Tema aleatorio", 172, self.act_tema_aleatorio),
+            ("tema_ia", "Tema con IA", 150, self.act_tema_ia),
+            ("tema_yaml", "Editar YAML", 140,
+             lambda: self.act_editar_yaml(theme.name if theme else None)),
+        )
+        boton_x = x
+        for clave, etiqueta, ancho, accion in botones:
+            imagen = self.scene.cached((f"btn_{clave}",),
+                                       lambda e=etiqueta, a=ancho: D.button(e, kind="secondary",
+                                                                            width=a, height=34))
+            self.scene.image(tag, clave, imagen, boton_x, fila_y)
+            self.scene.hotspot(tag, clave, boton_x, fila_y, ancho, 34, accion)
+            boton_x += ancho + SP["sm"]
 
     def _search_field(self, tag: str, x: int, y: int, width: int) -> None:
         field_w, field_h = 260, 34
@@ -849,6 +865,72 @@ class App(tk.Tk):
 
     def _select_theme(self, position: int) -> None:
         self.theme_index = position
+        self.render()
+
+    # -- crear temas -----------------------------------------------------------------
+    def act_tema_aleatorio(self) -> None:
+        """Genera un tema 3.5\" aleatorio, lo aplica y refresca la lista."""
+        def tarea():
+            destino = self._generador().generar_aleatorio()
+            return self._aplicar_generado(destino.name)
+
+        self.run_bg("Generando tema aleatorio", tarea, self._tras_crear_tema)
+
+    def act_tema_ia(self) -> None:
+        """Genera un tema a partir de una descripcion en texto (modo IA local)."""
+        from tkinter import simpledialog
+
+        prompt = simpledialog.askstring(
+            "Tema con IA",
+            "Describe el tema (color y estilo).\n"
+            "Ejemplos:  cyberpunk azul neon  ·  minimal verde suave  ·  atardecer naranja",
+            parent=self)
+        if not prompt:
+            return
+
+        def tarea():
+            destino = self._generador().generar_con_ia(prompt)
+            return self._aplicar_generado(destino.name)
+
+        self.run_bg("Generando tema con IA", tarea, self._tras_crear_tema)
+
+    @staticmethod
+    def _generador():
+        """Modulo generador_temas apuntando a la carpeta real del proyecto.
+
+        En el .exe el modulo va empaquetado y su __file__ apunta a la carpeta
+        temporal de PyInstaller: sin esto no encontraba res/themes.
+        """
+        carpeta = str(core.ROOT / "tools")
+        if carpeta not in sys.path:
+            sys.path.insert(0, carpeta)
+        import generador_temas as gen
+
+        gen.ROOT, gen.THEMES, gen.CONFIG = core.ROOT, core.THEMES_DIR, core.CONFIG_FILE
+        return gen
+
+    def _aplicar_generado(self, nombre: str) -> tuple[bool, str]:
+        """Aplica un tema recien generado con el mismo reinicio seguro que act_apply.
+
+        Antes se usaba generador_temas.aplicar(), que mataba CUALQUIER main.py
+        (tambien otros programas Python) y no reiniciaba con el lanzador.
+        """
+        anterior = self.config_editor.get("THEME")
+        self.config_editor.set_many({"THEME": (nombre, "config")})
+        ok, mensaje = self.platform.restart()
+        if ok:
+            return True, f"Tema generado y aplicado: {nombre}"
+        if anterior:
+            self.config_editor.set_many({"THEME": (anterior, "config")}, backup=False)
+            self.platform.restart()
+        return False, f"Tema {nombre} creado, pero no arranco: {mensaje} Se ha vuelto a {anterior}."
+
+    def _tras_crear_tema(self, _ok: bool, _mensaje: str) -> None:
+        """Recarga la lista de temas para que aparezca el recien creado."""
+        self.themes = core.scan_themes()
+        self.theme_index = 0
+        self.list_offset = 0
+        self.brightness = self._brightness()
         self.render()
 
     def _page_ajustes(self, x: int, y: int, width: int, height: int, pressed: str) -> None:
@@ -984,8 +1066,8 @@ class App(tk.Tk):
 
         self.run_bg("Guardando ajustes", task)
 
-    def act_editar_yaml(self) -> None:
-        """Avanzado: editor del YAML del tema actual (como en la interfaz antigua).
+    def act_editar_yaml(self, tema: str | None = None) -> None:
+        """Avanzado: editor del YAML del tema actual (o del tema que se indique).
 
         Valida el YAML antes de escribirlo, guarda copia .bak-centro y reinicia el
         monitor para aplicarlo. No toca el código del programa.
@@ -994,7 +1076,7 @@ class App(tk.Tk):
 
         import yaml
 
-        tema = self.config_editor.get("THEME")
+        tema = tema or self.config_editor.get("THEME")
         ruta = core.THEMES_DIR / str(tema) / "theme.yaml"
         if not ruta.exists():
             self.notify(f'No encuentro el theme.yaml del tema "{tema}"', error=True)
